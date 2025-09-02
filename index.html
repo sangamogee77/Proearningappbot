@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Pro Spin App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4A90E2; --secondary-color: #50E3C2; --success-color: #2ecc71;
+            --danger-color: #e74c3c; --gold-color: #f1c40f; --background-color: #F4F7FC;
+            --card-color: #FFFFFF; --text-color: #333333; --light-text-color: #888888;
+            --border-color: #EAEAEA; --shadow: 0 4px 15px rgba(0, 0, 0, 0.08); --border-radius: 12px;
+            --ttt-bg-color: #030712; --x-color: #ff1d58; --o-color: #00f6ff;
+            --grid-line-color: #007cf0; --glow-x: 0 0 5px var(--x-color), 0 0 15px var(--x-color);
+            --glow-o: 0 0 5px var(--o-color), 0 0 15px var(--o-color); --glow-grid: 0 0 8px var(--grid-line-color);
+            --mining-bg: linear-gradient(180deg, #1a1a2e, #0f0c29); --mining-coin: #f7931a; --mining-energy: #e94560;
+        }
+        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--background-color); color: var(--text-color); }
+        .screen { display: none; height: 100%; box-sizing: border-box; }
+        .screen.active { display: block; }
+        .hidden { display: none !important; }
+
+        /* --- Auth Screen Styles --- */
+        #auth-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 20px; box-sizing: border-box; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); }
+        .auth-card { background: var(--card-color); padding: 30px; border-radius: var(--border-radius); box-shadow: var(--shadow); width: 100%; max-width: 380px; text-align: center; }
+        .auth-card h2 { color: var(--primary-color); }
+        .auth-error { color: var(--danger-color); min-height: 20px; font-size: 0.9em; }
+        .auth-toggle-link { color: var(--primary-color); cursor: pointer; display: block; margin-top: 15px; font-size: 0.9em; text-decoration: none; }
+        .auth-toggle-link:hover { text-decoration: underline; }
+
+        /* --- App Styles --- */
+        #app-container { width: 100%; height: 100%; background: var(--background-color); display: none; flex-direction: column; overflow: hidden; }
+        header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 15px 20px; text-align: center; flex-shrink: 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 10; display: flex; justify-content: space-between; align-items: center; }
+        .header-title { display: flex; align-items: center; gap: 10px; }
+        .header-title h1 { margin: 0; font-size: 1.5em; font-weight: 700; }
+        .admin-icon { cursor: pointer; font-size: 1.5em; opacity: 0.9; transition: opacity 0.2s; user-select: none; }
+        .admin-icon:hover { opacity: 1; }
+        .header-info { text-align: right; }
+        #user-greeting { font-size: 0.8em; font-weight: 600; }
+        #logout-btn { background: none; border: 1px solid white; color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.7em; cursor: pointer; margin-top: 5px; }
+        .coin-balance { font-size: 1.1em; margin-top: 5px; opacity: 0.9; }
+        main { flex-grow: 1; padding: 25px; overflow-y: auto; }
+        h2 { font-size: 1.8em; font-weight: 600; color: var(--primary-color); margin-top: 0; margin-bottom: 20px; }
+        h3 { font-size: 1.2em; font-weight: 600; color: var(--primary-color); margin-top: 30px; }
+        p { color: var(--light-text-color); line-height: 1.6; }
+        
+        .daily-rewards-container { display: flex; justify-content: space-between; gap: 10px; margin-top: 20px; }
+        .reward-day { flex: 1; background: var(--card-color); border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 10px 5px; text-align: center; opacity: 0.5; transition: all 0.3s ease; }
+        .reward-day .day-label { font-size: 0.8em; font-weight: 600; color: var(--light-text-color); }
+        .reward-day .coin-reward { font-size: 1.2em; font-weight: 700; margin: 8px 0; }
+        .coin-logo { width: 20px; height: 20px; vertical-align: middle; margin-left: 4px; }
+        .reward-day.claimed { background-color: var(--secondary-color); color: white; opacity: 1; }
+        .reward-day.claimable { opacity: 1; border-color: var(--primary-color); box-shadow: 0 0 10px rgba(74, 144, 226, 0.5); cursor: pointer; transform: scale(1.05); }
+        
+        .button { display: block; width: 100%; padding: 15px; margin: 15px 0; font-size: 1.1em; font-weight: 600; color: white; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); border: none; border-radius: var(--border-radius); cursor: pointer; text-align: center; transition: background 0.2s, transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 10px rgba(74, 144, 226, 0.4); text-decoration: none; box-sizing: border-box; }
+        .button:disabled { background: #BDBDBD; cursor: not-allowed; box-shadow: none; transform: none; }
+        .button.completed { background: linear-gradient(135deg, var(--success-color), #27ae60); cursor: default; }
+        
+        #telegram-share-btn { background: linear-gradient(135deg, #2AABEE, #229ED9); box-shadow: 0 4px 10px rgba(42, 171, 238, 0.5); margin-top: 25px; }
+        #support-mail-btn { background: #2AABEE; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .card { background: var(--card-color); padding: 20px; border-radius: var(--border-radius); margin-bottom: 20px; text-align: center; border: 1px solid var(--border-color); }
+        span.code { font-size: 1.5em; font-weight: 700; color: var(--primary-color); letter-spacing: 2px; }
+        nav { display: flex; justify-content: space-around; padding: 5px 0; background: var(--card-color); border-top: 1px solid var(--border-color); flex-shrink: 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
+        nav .nav-button { background: none; border: none; cursor: pointer; color: var(--light-text-color); font-size: 0.7em; padding: 8px 4px; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: color 0.2s; flex: 1; text-align: center; }
+        nav .nav-button.active { color: var(--primary-color); }
+        nav .nav-button svg { width: 24px; height: 24px; }
+
+        #referral-list-container { text-align: left; margin-top: 20px; }
+        #referral-list-container ul { list-style: none; padding: 0; }
+        #referral-list-container li { background: #fdfdfd; padding: 10px 15px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border-color); }
+
+        #spin-screen { text-align: center; }
+        .wheel-container { position: relative; width: 300px; height: 300px; margin: 20px auto; }
+        .wheel-pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 25px solid transparent; border-right: 25px solid transparent; border-top: 35px solid var(--danger-color); z-index: 10; }
+        .wheel {
+            width: 100%; height: 100%; border-radius: 50%;
+            border: 8px solid var(--gold-color);
+            box-shadow: 0 0 20px rgba(0,0,0,0.2), inset 0 0 15px rgba(0,0,0,0.3);
+            position: relative;
+            transition: transform 5s ease-out;
+            background: conic-gradient(#2ecc71 0deg 36deg, #3498db 36deg 72deg, #9b59b6 72deg 108deg, #e91e63 108deg 144deg, #f1c40f 144deg 180deg, #34495e 180deg 216deg, #1abc9c 216deg 252deg, #8e44ad 252deg 288deg, #e74c3c 288deg 324deg, #f39c12 324deg 360deg);
+        }
+        .wheel-button { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80px; height: 80px; background: radial-gradient(#d35400, #e67e22); border-radius: 50%; border: 5px solid white; color: white; font-size: 1.5em; font-weight: 700; cursor: pointer; display: grid; place-items: center; z-index: 5; box-shadow: 0 5px 10px rgba(0,0,0,0.3); }
+
+        #quiz-card { padding: 25px; }
+        #question-text { font-size: 1.2em; font-weight: 600; min-height: 60px; }
+        #answer-options { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+        .answer-btn { padding: 12px; font-size: 1em; border: 1px solid var(--border-color); background-color: var(--card-color); border-radius: var(--border-radius); cursor: pointer; transition: all 0.2s; }
+        .answer-btn:disabled { cursor: not-allowed; opacity: 0.6; }
+        .answer-btn.correct { background-color: var(--success-color); color: white; }
+        .answer-btn.incorrect { background-color: var(--danger-color); color: white; }
+        #quiz-limit-text { font-weight: 600; color: var(--primary-color); }
+        
+        #tictactoe-screen { background-color: var(--ttt-bg-color); color: white; text-align: center; padding: 20px; box-sizing: border-box; }
+        #tictactoe-screen .action-btn { background: transparent; border: 2px solid var(--x-color); color: var(--x-color); padding: 15px 30px; font-size: 1.2rem; cursor: pointer; box-shadow: inset 0 0 10px var(--x-color), 0 0 10px var(--x-color); margin: 0.5rem auto; width: 90%; max-width: 320px; display: block; }
+        #tictactoe-screen .action-btn:disabled { border-color: #888; color: #888; box-shadow: none; cursor: not-allowed; }
+        #tictactoe-screen h1 { font-family: 'Orbitron', sans-serif; font-size: 2rem; color: var(--o-color); text-shadow: var(--glow-o); margin-bottom: 0; }
+        #tictactoe-screen .game-board { display: grid; grid-template-columns: repeat(3, 1fr); max-width: 320px; aspect-ratio: 1 / 1; gap: 8px; background-color: var(--grid-line-color); box-shadow: var(--glow-grid); padding: 8px; border-radius: 8px; margin: 1rem auto; }
+        #tictactoe-screen .cell { background-color: var(--ttt-bg-color); border-radius: 4px; display: flex; justify-content: center; align-items: center; font-size: clamp(3rem, 20vw, 5rem); cursor: pointer; font-family: 'Orbitron', sans-serif; }
+        #tictactoe-screen .cell.x { color: var(--x-color); text-shadow: var(--glow-x); }
+        #tictactoe-screen .cell.o { color: #ffffff; text-shadow: var(--glow-o); }
+        #ttt-status-text { font-size: 1.2rem; height: 25px; margin-bottom: 1rem; }
+        #tictactoe-screen p { color: #d1d5db; }
+        #ttt-scoreboard { font-family: 'Orbitron', sans-serif; font-size: 1.3rem; margin-top: 10px; color: var(--secondary-color); }
+        #ttt-round-text { font-size: 1rem; font-weight: bold; color: white; }
+
+        /* --- Modern Mining Game Styles --- */
+        @keyframes subtle-gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        #mining-screen-container { 
+            background: linear-gradient(270deg, #1a1a2e, #0f0c29, #1a1a2e);
+            background-size: 200% 200%;
+            animation: subtle-gradient 15s ease infinite;
+            color: white; text-align: center; display: flex; flex-direction: column;
+            justify-content: space-between; position: relative; overflow: hidden; height: 100%;
+        }
+        .mining-header { font-family: 'Orbitron', sans-serif; z-index: 2; padding: 20px 20px 0 20px; }
+        .mining-balance-display { font-size: 2.5em; font-weight: 900; color: white; text-shadow: 0 0 10px var(--mining-coin), 0 0 20px var(--mining-coin); margin-bottom: 10px; }
+        .mining-stats { display: flex; justify-content: space-around; background: rgba(0,0,0,0.3); padding: 10px; border-radius: var(--border-radius); margin-bottom: 20px; }
+        .stat-box span { display: block; font-size: 0.8em; opacity: 0.8; }
+        .stat-box strong { font-size: 1.1em; color: var(--mining-coin); }
+        .mining-area { flex-grow: 1; display: flex; justify-content: center; align-items: center; position: relative; z-index: 2; }
+        .tap-coin { 
+            width: 180px; height: 180px; border-radius: 50%; cursor: pointer; user-select: none;
+            background: radial-gradient(circle, #ffe8a1, var(--mining-coin));
+            border: 8px solid #ffc940;
+            box-shadow: 0 0 50px var(--mining-coin), inset 0 0 15px rgba(0,0,0,0.5), 0 5px 10px rgba(0,0,0,0.4);
+            display: grid; place-items: center; transition: transform 0.05s ease; animation: pulse 2.5s infinite ease-in-out;
+        }
+        .tap-coin:active { transform: scale(0.95); animation: none; }
+        .tap-coin.cooldown { filter: grayscale(80%); cursor: not-allowed; animation: none; }
+        .tap-coin-text { font-size: 4em; font-weight: bold; color: rgba(255,255,255,0.8); text-shadow: 2px 2px 5px rgba(0,0,0,0.6); }
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 50px var(--mining-coin); } 50% { transform: scale(1.05); box-shadow: 0 0 70px var(--mining-coin); } 100% { transform: scale(1); box-shadow: 0 0 50px var(--mining-coin); } }
+        .tap-feedback { position: absolute; font-size: 2em; font-family: 'Orbitron', sans-serif; font-weight: 700; color: var(--mining-coin); opacity: 0; user-select: none; pointer-events: none; text-shadow: 0 0 5px white; animation: floatUp 1.2s ease-out forwards; }
+        @keyframes floatUp { from { transform: translateY(0) scale(1); opacity: 1; } to { transform: translateY(-100px) scale(0.5); opacity: 0; } }
+        .mining-footer { padding: 15px 20px; z-index: 2; background: rgba(0,0,0,0.2); }
+        #mining-limit-info { font-family: 'Orbitron', sans-serif; margin-bottom: 10px; height: 40px; }
+        #mining-cooldown-timer { font-size: 1.5em; font-weight: 700; color: var(--danger-color); }
+        #mining-taps-left { font-size: 1.1em; }
+        .energy-bar-container, #mining-energy-display { display: none !important; } /* Hides the energy bar and text */
+        
+        .boosts-section { padding: 10px 20px 20px 20px; z-index: 2; overflow-y: auto; background: rgba(0,0,0,0.3); }
+        .boosts-section h3 { font-family: 'Orbitron', sans-serif; color: var(--secondary-color); text-shadow: 0 0 8px var(--secondary-color); margin: 0 0 15px 0; font-size: 1.2em; }
+        .boost-card { background: rgba(0,0,0,0.3); border: 1px solid #30363d; padding: 15px; border-radius: var(--border-radius); margin-bottom: 10px; text-align: left;}
+        .boost-card p { margin: 0 0 10px 0; color: #c9d1d9; font-size: 0.9em; line-height: 1.4;}
+        .boost-card .boost-button { display: inline-block; width: auto; padding: 8px 15px; font-size: 0.9em; margin: 0; background: var(--primary-color); }
+        .boost-card .boost-button:disabled { background: #555; color: #999; cursor: not-allowed; }
+        .boost-level { font-weight: bold; color: var(--gold-color); }
+
+        .currency-selector { display: flex; justify-content: center; gap: 10px; margin: 20px 0; }
+        .currency-btn { padding: 8px 15px; border: 1px solid var(--border-color); background: #fff; border-radius: 8px; cursor: pointer; }
+        .currency-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .wallet-logos { display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 20px; height: 50px; }
+        .wallet-logo { max-width: 80px; max-height: 50px; object-fit: contain; }
+        .input-field { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1em; box-sizing: border-box; }
+        
+        #modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 30px; border-radius: var(--border-radius); text-align: center; box-shadow: var(--shadow); width: 80%; max-width: 350px; }
+
+        .feature-section { margin-top: 35px; }
+        .feature-section h2 { font-size: 1.5em; margin-bottom: 15px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;}
+        .quick-spin-card { display: flex; flex-direction: column; align-items: center; }
+        
+        .mini-game-card { background: linear-gradient(135deg, #f8f9fa, #e9ecef); padding: 25px; border: 1px solid var(--border-color); text-align: center; }
+        .mini-game-card h3 { color: var(--primary-color); margin-top: 0; font-size: 1.4em; }
+        .mini-game-icon { width: 60px; height: 60px; line-height: 60px; font-size: 2em; margin: 10px auto; border-radius: 50%; background-color: var(--primary-color); color: white; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .mini-game-answer-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .mini-game-btn { padding: 12px 5px; font-size: 0.9em; background: white; border: 1px solid var(--border-color); border-radius: var(--border-radius); cursor: pointer; transition: all 0.2s ease; }
+        .mini-game-btn:hover:not(:disabled) { border-color: var(--primary-color); color: var(--primary-color); }
+        .mini-game-btn:disabled { cursor: not-allowed; }
+        .mini-game-btn.correct { background-color: var(--success-color); color: white; border-color: var(--success-color); }
+        .mini-game-btn.incorrect { background-color: var(--danger-color); color: white; border-color: var(--danger-color); }
+        .mini-game-plays-left { font-weight: 600; color: var(--primary-color); margin: 10px 0; }
+        .quiz-image { width: 150px; height: 90px; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: var(--shadow); object-fit: contain; margin-bottom: 20px; background-color: #ffffff; padding: 5px; opacity: 1; transform: scale(1); transition: opacity 0.3s ease, transform 0.3s ease; }
+        
+        .achievements-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; }
+        .achievement-badge { text-align: center; }
+        .achievement-badge .badge-icon { background-color: #f0f0f0; border-radius: 50%; padding: 10px; display: inline-block; }
+        .achievement-badge svg { width: 48px; height: 48px; filter: grayscale(100%); opacity: 0.5; transition: all 0.3s ease; }
+        .achievement-badge.unlocked svg { filter: none; opacity: 1; }
+        .achievement-badge.unlocked .badge-icon { background-color: var(--secondary-color); box-shadow: 0 0 10px var(--secondary-color); }
+        .achievement-badge p { font-size: 0.8em; color: var(--light-text-color); margin-top: 5px; font-weight: 600; }
+        
+        #transaction-history-container { text-align: left; }
+        #transaction-history-list { list-style: none; padding: 0; }
+        .transaction-item { background: #fdfdfd; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .transaction-details { display: flex; flex-direction: column; gap: 4px; }
+        .transaction-details span { font-size: 0.9em; }
+        .transaction-details .holder-name { font-weight: 600; color: var(--text-color); }
+        .transaction-status { font-weight: 600; font-size: 0.9em; padding: 4px 8px; border-radius: 6px; text-transform: capitalize;}
+        .transaction-status.pending { background-color: #f1c40f; color: white; }
+        .transaction-status.approved, .transaction-status.completed { background-color: var(--success-color); color: white; }
+
+        .news-post { background-color: var(--card-color); border: 1px solid var(--border-color); border-radius: var(--border-radius); margin-bottom: 20px; padding: 20px; text-align: left; }
+        .news-post-image { max-width: 100%; border-radius: 8px; margin-bottom: 15px; }
+        .news-post-title { font-size: 1.3em; font-weight: 700; color: var(--text-color); margin: 0 0 10px 0; }
+        .news-post-caption { font-size: 1em; color: var(--light-text-color); line-height: 1.6; margin: 0; }
+
+        /* --- Mystery Box Styles --- */
+        #mystery-box-container { position: relative; display: flex; justify-content: center; align-items: center; height: 220px; }
+        @keyframes mystery-glow {
+            0% { box-shadow: 0 0 5px var(--primary-color), 0 0 10px var(--primary-color); }
+            50% { box-shadow: 0 0 20px var(--secondary-color), 0 0 30px var(--secondary-color); }
+            100% { box-shadow: 0 0 5px var(--primary-color), 0 0 10px var(--primary-color); }
+        }
+        #mystery-box-card { background: linear-gradient(135deg, #f8f9fa, #e9ecef); }
+        #mystery-box-img { max-width: 200px; border-radius: 15px; transition: transform 0.2s ease, filter 0.3s ease, box-shadow 0.3s ease; pointer-events: none; }
+        #mystery-box-img.claimable { animation: mystery-glow 3s infinite ease-in-out; cursor: pointer; pointer-events: auto; }
+        #mystery-box-img.claimable:hover { transform: scale(1.05); }
+        #mystery-box-img.claimable:active { transform: scale(0.98); }
+        #mystery-box-img.claimed { cursor: not-allowed; filter: grayscale(80%) opacity(0.7); pointer-events: none; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        #mystery-box-img.opening { animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both; transform: translate3d(0, 0, 0); }
+        .coin-animation-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; pointer-events: none; }
+        .falling-coin { position: absolute; width: 25px; height: 25px; background-color: var(--gold-color); border-radius: 50%; opacity: 0; animation: fall 1.5s ease-out forwards; display: flex; justify-content: center; align-items: center; font-weight: bold; color: #b7860d; border: 2px solid #b7860d; }
+        @keyframes fall { from { transform: translateY(-50px) scale(0.5); opacity: 1; } to { transform: translateY(100px) scale(1.2); opacity: 0; } }
+        
+        /* --- ADMIN PANEL STYLES (SCOPED) --- */
+        #admin {
+            --admin-primary-color: #4A90E2; --admin-secondary-color: #50E3C2; --admin-success-color: #2ecc71;
+            --admin-danger-color: #e74c3c; --admin-background-color: #0d1117;
+            --admin-card-color: #161b22; --admin-text-color: #c9d1d9; --admin-light-text-color: #8b949e;
+            --admin-border-color: #30363d;
+            background-color: var(--admin-background-color); color: var(--admin-text-color);
+            height: 100%; overflow-y: auto; box-sizing: border-box; padding: 25px;
+        }
+        #admin h2, #admin h3 { color: var(--admin-primary-color); }
+        #admin p { color: var(--admin-light-text-color); }
+        #admin .button { color: white !important; background: linear-gradient(135deg, var(--admin-primary-color), var(--admin-secondary-color)); border-radius: var(--border-radius); display: inline-block; padding: 12px 20px; margin: 10px 0; font-size: 1em; font-weight: 600; border: none; }
+        #admin .button.danger { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        #admin .card { background: var(--admin-card-color); border: 1px solid var(--admin-border-color); text-align: left; }
+        #admin .input-field, #admin textarea { background: #0d1117; color: var(--admin-text-color); border: 1px solid var(--admin-border-color); }
+        #admin .admin-request-item { background: #0d1117; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--admin-border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        #admin .admin-request-details { text-align: left; }
+        #admin .admin-request-details span { display: block; margin-bottom: 4px; }
+        #admin .admin-request-details .user-email { font-size: 0.8em; color: var(--admin-secondary-color); font-style: italic; }
+        #admin .admin-user-item { display: flex; justify-content: space-between; align-items: center; background: #0d1117; padding: 12px 15px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--admin-border-color); font-size: 0.9em; }
+        #admin .admin-user-info strong { color: var(--admin-text-color); }
+        #admin .admin-user-info span { color: var(--admin-light-text-color); display: block; font-size: 0.9em; }
+        #admin .admin-user-item.banned-user .admin-user-info strong { color: var(--admin-danger-color); text-decoration: line-through; }
+        #admin .admin-news-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px !important; }
+        #admin .admin-news-item p { margin: 0; }
+        #admin .admin-user-actions { display: flex; gap: 5px; }
+        #admin .approve-btn, #admin .send-coins-btn, #admin .delete-post-btn, #admin .ban-btn, #admin .unban-btn { border: none; padding: 8px 12px; font-size: 0.9em; border-radius: 6px; cursor: pointer; color: white; }
+        #admin .approve-btn { background-color: var(--admin-success-color); }
+        #admin .send-coins-btn { background-color: var(--admin-primary-color); }
+        #admin .delete-post-btn { background-color: var(--admin-danger-color); }
+        #admin .ban-btn { background-color: var(--admin-danger-color); }
+        #admin .unban-btn { background-color: var(--admin-success-color); }
+    </style>
+</head>
+<body>
+    <div id="auth-screen"></div>
+
+    <div id="app-container">
+        <header>
+            <div class="header-title">
+                <h1>Pro Spin App</h1>
+                <div class="admin-icon" onclick="showAdminLogin()">👤</div>
+            </div>
+            <div class="header-info">
+                <div id="user-greeting"></div>
+                <div class="coin-balance">Coins: <span id="coin-balance-display">0</span></div>
+                <button id="logout-btn">Logout</button>
+            </div>
+        </header>
+        <main>
+            <div id="home" class="screen active">
+                <div class="feature-section">
+                    <h2>Daily Login Bonus</h2>
+                    <p>Log in every day for increasing rewards! Miss a day and your streak resets.</p>
+                    <div id="daily-rewards-container" class="daily-rewards-container"></div>
+                </div>
+                <div class="feature-section">
+                    <h2>Spin Wheel</h2>
+                    <div class="card quick-spin-card">
+                        <p>You have one free spin every day. Test your luck!</p>
+                        <button class="button" id="go-to-spin-btn" style="margin-top: 20px;">Spin Now</button>
+                    </div>
+                </div>
+                <div class="feature-section">
+                    <h2>Mini Game</h2>
+                    <div class="mini-game-card">
+                        <div class="mini-game-icon">🌍</div>
+                        <h3>Guess the Flag</h3>
+                        <p>Correctly guess the country flag to win 2 coins!</p>
+                        <div id="flag-quiz-game">
+                            <p id="flag-quiz-plays-left" class="mini-game-plays-left">Plays left: 5/5</p>
+                            <img id="flag-image" class="quiz-image" src="" alt="Country Flag" onerror="this.src='https://via.placeholder.com/150x90?text=Flag';">
+                            <div id="flag-quiz-options" class="mini-game-answer-options"></div>
+                        </div>
+                    </div>
+                </div>
+                 <div class="feature-section">
+                    <h2>Achievements</h2>
+                    <div id="achievements-container" class="achievements-container"></div>
+                </div>
+            </div>
+            <div id="refer" class="screen">
+                <h2>Refer & Earn</h2>
+                <div class="card">
+                    <p>Your Code:</p>
+                    <span id="referral-code" class="code"></span>
+                </div>
+                <p>You earn <strong>20 coins</strong> and <strong>10% commission</strong> from your friend's earnings.</p>
+                <a id="telegram-share-btn" class="button" href="#" target="_blank">
+                    <svg style="width:24px;height:24px;vertical-align: middle; margin-right: 8px;" viewBox="0 0 24 24" fill="white"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-1.02.2-1.3l15.97-5.85c.73-.27 1.36.17 1.15.94l-3.32 15.21c-.23.95-1.02 1.18-1.72.73l-4.96-3.65-2.42 2.34c-.27.26-.65.34-.96.1z"/></svg>
+                    Share on Telegram
+                </a>
+                <div id="referral-list-container"></div>
+            </div>
+            <div id="task" class="screen">
+                <h2>Tasks & Rewards</h2>
+                <div class="card" id="mystery-box-card">
+                    <h3>Daily Mystery Box</h3>
+                    <p>Click the box below to reveal your daily surprise! What could be inside?</p>
+                    <div id="mystery-box-container">
+                        <img src="https://i.ibb.co/JSmB4fQ/gradient-mystery-box-illustration-23-2149532750.jpg" alt="Mystery Box" id="mystery-box-img">
+                        <div id="coin-animation-container" class="coin-animation-container"></div>
+                    </div>
+                    <p id="mystery-box-status" style="font-weight: bold; margin-top: 15px; color: var(--primary-color);"></p>
+                </div>
+                 <div class="card">
+                    <h3>More Tasks</h3>
+                    <p>New tasks are coming soon! Check back later for more ways to earn.</p>
+                </div>
+            </div>
+            <div id="spin" class="screen">
+                <div id="spin-screen">
+                    <h2>Spin the Wheel</h2>
+                    <p>Spin once daily to win random coin prizes!</p>
+                    <div class="wheel-container">
+                        <div class="wheel-pointer"></div>
+                        <div class="wheel" id="spin-wheel"></div>
+                        <div class="wheel-button" id="spin-button">SPIN</div>
+                    </div>
+                </div>
+            </div>
+            <div id="quiz" class="screen">
+                <h2>GK Quiz</h2>
+                <p>Answer correctly to earn <strong>0.50 coins</strong>. <span id="quiz-limit-text"></span></p>
+                <div class="card" id="quiz-card">
+                    <p id="question-text">Loading question...</p>
+                    <div id="answer-options"></div>
+                </div>
+            </div>
+             <div id="mining" class="screen">
+                 <div id="mining-screen-container">
+                    <div class="mining-header">
+                         <div class="mining-balance-display" id="tapped-balance-display">0.0000</div>
+                         <div class="mining-stats">
+                            <div class="stat-box">
+                                <span>Profit Per Hour</span>
+                                <strong id="profit-per-hour">0.0000</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mining-area">
+                        <div id="tap-coin" class="tap-coin">
+                            <span class="tap-coin-text">💎</span>
+                        </div>
+                    </div>
+                    <div class="mining-footer">
+                         <div id="mining-limit-info">
+                            <div id="mining-cooldown-timer" class="hidden"></div>
+                            <div id="mining-taps-left">Taps Left: 100/100</div>
+                         </div>
+                    </div>
+                    <div class="boosts-section">
+                        <h3>Boosts</h3>
+                        <div id="mining-boosts-container"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="tictactoe" class="screen">
+                <div id="tictactoe-screen">
+                    <h1>NEON TIC-TAC-TOE</h1>
+                    <p id="ttt-scoreboard">Player: 0 - AI: 0</p>
+                    <p id="ttt-round-text">Round 1</p>
+                    <p>First to 2 wins is the winner! Win: +5 Coins, Lose: -5 Coins. (Min. 10 coins to play)</p>
+                    <p id="ttt-status-text">Your Turn</p>
+                    <div class="game-board" id="game-board"></div>
+                    <button id="start-ttt-btn" class="action-btn">Play Match</button>
+                </div>
+            </div>
+            <div id="news" class="screen">
+                <h2>News & Announcements</h2>
+                <div id="news-feed-list"></div>
+            </div>
+            <div id="wallet" class="screen">
+                <h2>Wallet</h2>
+                <div class="card"><p>Total Balance:</p><span class="code" id="wallet-balance-display">0 Coins</span></div>
+                <div class="currency-selector">
+                    <button class="currency-btn active" data-currency="NPR">NPR</button>
+                    <button class="currency-btn" data-currency="INR">INR</button>
+                </div>
+                <div class="wallet-options">
+                    <div id="npr-wallets" class="wallet-logos">
+                        <img src="https://i.ibb.co/20tDV2sr/unnamed-1.png" alt="eSewa" class="wallet-logo">
+                        <img src="https://i.ibb.co/DP0ZTTrG/unnamed-2.png" alt="Khalti" class="wallet-logo">
+                        <img src="https://i.ibb.co/WvrWkzm8/unnamed-3.png" alt="IME Pay" class="wallet-logo">
+                    </div>
+                    <div id="inr-wallets" class="wallet-logos hidden">
+                        <img src="https://assetscdn1.paytm.com/images/catalog/category/5165/paytm_logo.png" alt="Paytm" class="wallet-logo">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Google_Pay_Logo.svg/2560px-Google_Pay_Logo.svg.png" alt="Google Pay" class="wallet-logo">
+                    </div>
+                    <input type="text" id="wallet-name-input" class="input-field" placeholder="Wallet Holder's Full Name" required>
+                    <input type="text" id="wallet-number-input" class="input-field" placeholder="Enter your Wallet Number/ID" required>
+                    <input type="number" id="withdraw-amount-input" class="input-field" placeholder="Amount to Withdraw (e.g., 1000)" required>
+                    <button class="button" id="request-withdrawal-btn">Request Withdrawal</button>
+                    <p style="font-size: 0.9em; color: var(--light-text-color);">Minimum withdrawal is 1000 coins. Processed within 24-48 hours.</p>
+                    <p style="text-align: center; margin-top: 15px; font-size: 0.9em;">For issues, contact admin on Telegram:</p>
+                    <a id="support-mail-btn" class="button">Contact on Telegram</a>
+                </div>
+                <div id="transaction-history-container">
+                    <h3>Transaction History</h3>
+                    <ul id="transaction-history-list"></ul>
+                </div>
+            </div>
+            <!-- Admin Panel Screen -->
+            <div id="admin" class="screen">
+                 <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>Admin Panel</h2>
+                    <button id="admin-logout-btn" class="button danger" style="width: auto; padding: 8px 15px; margin: 0;">Logout</button>
+                </div>
+                <div class="card">
+                    <h3>Pending Withdrawal Approvals</h3>
+                    <div id="admin-request-list"></div>
+                </div>
+                <div class="card">
+                    <h3 style="margin-top: 40px;">All Registered Users</h3>
+                    <div id="admin-user-list"></div>
+                </div>
+            </div>
+        </main>
+        <nav>
+            <button class="nav-button active" data-target="home"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home</button>
+            <button class="nav-button" data-target="refer"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>Refer</button>
+            <button class="nav-button" data-target="task"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1.04 14.88l-1.42-1.42-1.06 1.06-2.83-2.83 1.41-1.41 2.47 2.48 3.24-3.24 1.41 1.41-4.22 4.22zM13 9V3.5L18.5 9H13z"/></svg>Tasks</button>
+            <button class="nav-button" data-target="spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.484 2 2 6.484 2 12s4.484 10 10 10 10-4.484 10-10S17.516 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8zm-1-8.411l2.707 2.707.707-.707L11.707 11H13v-1h-2.293L8.293 7.589l-.707.707L10.293 11H9v1h2.089z"/></svg>Spin</button>
+            <button class="nav-button" data-target="mining"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M15.35 6.65L13 9l2.35 2.35-1.42 1.42L11.58 10.4l-2.35 2.35-1.42-1.42L10.16 9l-2.35-2.35 1.42-1.42L11.58 7.58l2.35-2.35 1.42 1.42zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>Mine</button>
+            <button class="nav-button" data-target="quiz"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg>Quiz</button>
+            <button class="nav-button" data-target="tictactoe"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M22 2H2v20h20V2zM8 12H4V8h4v4zm6 0h-4V8h4v4zm6 0h-4V8h4v4zM8 18H4v-4h4v4zm6 0h-4v-4h4v4zm6 0h-4v-4h4v4zM8 6H4V2h4v4zm6 0h-4V2h4v4zm6 0h-4V2h4v4z"/></svg>Tictactoe</button>
+            <button class="nav-button" data-target="news"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 14H6v-2h6v2zm4-4H6v-2h12v2zm0-4H6V6h12v2z"/></svg>News</button>
+            <button class="nav-button" data-target="wallet"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>Wallet</button>
+        </nav>
+    </div>
+    <div id="modal"><div class="modal-content"><h3 id="modal-title"></h3><p id="modal-text"></p><button class="button" id="modal-close">OK</button></div></div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const safeGetLS = (key) => { try { return localStorage.getItem(key); } catch (e) { console.error("LS Read Error:", e); return null; } };
+            const safeSetLS = (key, value) => { try { localStorage.setItem(key, value); } catch (e) { console.error("LS Write Error:", e); } };
+            const safeRemoveLS = (key) => { try { localStorage.removeItem(key); } catch (e) { console.error("LS Remove Error:", e); } };
+            let isAdminLoggedIn = false;
+            let miningCooldownInterval = null;
+
+            const dom = {
+                appContainer: document.getElementById('app-container'), authScreen: document.getElementById('auth-screen'),
+                header: document.querySelector('#app-container header'), nav: document.querySelector('#app-container nav'),
+                userGreeting: document.getElementById('user-greeting'), referralCode: document.getElementById('referral-code'), logoutBtn: document.getElementById('logout-btn'), coinDisplay: document.getElementById('coin-balance-display'), walletBalanceDisplay: document.getElementById('wallet-balance-display'), navButtons: document.querySelectorAll('.nav-button[data-target]'), spinWheel: document.getElementById('spin-wheel'), spinButton: document.getElementById('spin-button'), dailyRewardsContainer: document.getElementById('daily-rewards-container'),
+                telegramShareBtn: document.getElementById('telegram-share-btn'), supportMailBtn: document.getElementById('support-mail-btn'), referralListContainer: document.getElementById('referral-list-container'),
+                goToSpinBtn: document.getElementById('go-to-spin-btn'),
+                mysteryBoxImg: document.getElementById('mystery-box-img'),
+                mysteryBoxStatus: document.getElementById('mystery-box-status'),
+                coinAnimationContainer: document.getElementById('coin-animation-container'),
+                modal: document.getElementById('modal'), modalTitle: document.getElementById('modal-title'), modalText: document.getElementById('modal-text'), modalClose: document.getElementById('modal-close'),
+                walletNameInput: document.getElementById('wallet-name-input'), walletNumberInput: document.getElementById('wallet-number-input'), withdrawAmountInput: document.getElementById('withdraw-amount-input'),
+                requestWithdrawalBtn: document.getElementById('request-withdrawal-btn'), transactionHistoryList: document.getElementById('transaction-history-list'),
+                currencyBtns: document.querySelectorAll('.currency-btn'), nprWallets: document.getElementById('npr-wallets'), inrWallets: document.getElementById('inr-wallets'),
+                flagQuizImage: document.getElementById('flag-image'), flagQuizOptionsContainer: document.getElementById('flag-quiz-options'), flagQuizPlaysLeft: document.getElementById('flag-quiz-plays-left'),
+                questionText: document.getElementById('question-text'), answerOptionsContainer: document.getElementById('answer-options'), quizLimitText: document.getElementById('quiz-limit-text'),
+                tttGameBoard: document.getElementById('game-board'), tttStatusText: document.getElementById('ttt-status-text'), startTTTBtn: document.getElementById('start-ttt-btn'), tttScoreboard: document.getElementById('ttt-scoreboard'), tttRoundText: document.getElementById('ttt-round-text'),
+                achievementsContainer: document.getElementById('achievements-container'),
+                newsFeedList: document.getElementById('news-feed-list'),
+                adminScreen: document.getElementById('admin'), adminLogoutBtn: document.getElementById('admin-logout-btn'),
+                adminRequestList: document.getElementById('admin-request-list'), adminUserList: document.getElementById('admin-user-list'),
+                miningScreenContainer: document.getElementById('mining-screen-container'), tapCoin: document.getElementById('tap-coin'), tappedBalanceDisplay: document.getElementById('tapped-balance-display'),
+                profitPerHourDisplay: document.getElementById('profit-per-hour'),
+                miningLimitInfo: document.getElementById('mining-limit-info'), miningCooldownTimer: document.getElementById('mining-cooldown-timer'), miningTapsLeft: document.getElementById('mining-taps-left'),
+                miningBoostsContainer: document.getElementById('mining-boosts-container'),
+            };
+
+            const getDateString = d => d.toISOString().split('T')[0];
+            const today = () => getDateString(new Date());
+            const showModal = (title, text, cb) => { 
+                dom.modalTitle.textContent = title; dom.modalText.innerHTML = text; dom.modal.style.display = 'flex';
+                const newBtn = dom.modalClose.cloneNode(true);
+                dom.modalClose.parentNode.replaceChild(newBtn, dom.modalClose);
+                dom.modalClose = newBtn;
+                dom.modalClose.addEventListener('click', () => { dom.modal.style.display = 'none'; if (cb) cb(); }, { once: true });
+            };
+            
+            let state = {};
+
+            // --- MINING GAME UPGRADES CONFIGURATION ---
+            const MINING_UPGRADES = {
+                tap: [
+                    { limit: 100, cost: 0 },    // Level 0 (Base)
+                    { limit: 200, cost: 50 },   // Level 1
+                    { limit: 350, cost: 120 },  // Level 2
+                    { limit: 500, cost: 250 },  // Level 3
+                    { limit: 750, cost: 500 },  // Level 4
+                    { limit: 1000, cost: 900 }, // Level 5
+                    { limit: 1500, cost: 1600 },// Level 6
+                    { limit: 2000, cost: 2500 },// Level 7
+                    { limit: 3000, cost: 4000 },// Level 8
+                    { limit: 5000, cost: 7000 },// Level 9
+                    { limit: 7500, cost: 12000},// Level 10
+                    { limit: 10000, cost: 20000}// Level 11
+                ],
+                profit: [
+                    { rate: 0.0007, cost: 0 },    // Level 0
+                    { rate: 0.0010, cost: 200 },   // Level 1
+                    { rate: 0.0015, cost: 450 },   // Level 2
+                    { rate: 0.0022, cost: 900 },   // Level 3
+                    { rate: 0.0030, cost: 1750 },  // Level 4
+                    { rate: 0.0040, cost: 3000 },  // Level 5
+                    { rate: 0.0055, cost: 5000 },  // Level 6
+                    { rate: 0.0070, cost: 8000 },  // Level 7
+                    { rate: 0.0090, cost: 12000 }, // Level 8
+                    { rate: 0.0110, cost: 18000 }, // Level 9
+                    { rate: 0.0150, cost: 25000 }  // Level 10
+                ]
+            };
+            
+            const MYSTERY_BOX_PRIZES = [1, 1, 1, 1, 1, 5, 5, 5, 6, 6, 7, 10, 20, 30]; // Weighted array
+
+            function updateCoinDisplay() { const formattedCoins = (state.coins || 0).toFixed(4); dom.coinDisplay.textContent = formattedCoins; dom.walletBalanceDisplay.textContent = `${formattedCoins} Coins`; }
+            function saveData() { if (state.user) safeSetLS(`proSpinAppState_${state.user.email}`, JSON.stringify(state)); }
+            
+            function loadData(user, startingCoins = 0) {
+                const savedStateJSON = safeGetLS(`proSpinAppState_${user.email}`);
+                const defaultState = {
+                    user, coins: 0, lastSpin: null, streakDay: 1, lastClaimDate: null, selectedCurrency: 'NPR',
+                    lastMysteryBoxClaim: null,
+                    transactionHistory: [],
+                    quizzesPlayedToday: 0, lastQuizPlayDate: null, questionsAskedToday: [], lastTTTPlayTime: null,
+                    flagQuiz: { playsToday: 0, lastPlayDate: null, questionsAskedToday: [] },
+                    achievements: { 'streak3': false, 'streak7': false, 'quizMaster': false, 'referrer1': false, 'referrer5': false },
+                    mining: { 
+                        tappedBalance: 0, lastPassiveClaim: Date.now(),
+                        tapsMade: 0, lastTapReset: today(), cooldownUntil: null,
+                        tapLevel: 0, profitLevel: 0,
+                        tapBonus: 0, profitBonus: 0, comboPackPurchased: false
+                    },
+                    correctlyAnsweredQuestions: [], totalReferrals: 0
+                };
+                state = savedStateJSON ? { ...defaultState, ...JSON.parse(savedStateJSON), user } : { ...defaultState, coins: startingCoins };
+                
+                state.achievements = { ...defaultState.achievements, ...(state.achievements || {}) };
+                state.flagQuiz = { ...defaultState.flagQuiz, ...(state.flagQuiz || {}) };
+                state.mining = { ...defaultState.mining, ...(state.mining || {}) };
+                state.correctlyAnsweredQuestions = state.correctlyAnsweredQuestions || [];
+            }
+            
+            function addCoins(amount, isAchievementReward = false) {
+                 if (amount > 0 && state.user.referredBy && !isAchievementReward) {
+                    const referrer = auth.usersDB.find(u => u.email === state.user.referredBy);
+                    if (referrer && !referrer.isBanned) {
+                        const commission = amount * 0.10; const referrerStateKey = `proSpinAppState_${referrer.email}`;
+                        const referrerStateJSON = safeGetLS(referrerStateKey);
+                        if (referrerStateJSON) {
+                            const referrerState = JSON.parse(referrerStateJSON);
+                            referrerState.coins = (referrerState.coins || 0) + commission;
+                            safeSetLS(referrerStateKey, JSON.stringify(referrerState));
+                        }
+                    }
+                }
+                state.coins = Math.max(0, (state.coins || 0) + amount);
+                updateCoinDisplay(); saveData();
+            }
+            
+             function checkAndAutoApproveWithdrawals() {
+                const twelveHours = 12 * 60 * 60 * 1000;
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith('proSpinAppState_')) {
+                        let userState;
+                        try { userState = JSON.parse(safeGetLS(key)); } 
+                        catch (e) { continue; }
+
+                        if (userState && userState.transactionHistory && userState.transactionHistory.length > 0) {
+                            let wasModified = false;
+                            userState.transactionHistory = userState.transactionHistory.map(tx => {
+                                if (tx.status === 'Pending' && tx.type === 'withdrawal' && tx.requestTimestamp) {
+                                    if ((Date.now() - tx.requestTimestamp) >= twelveHours) {
+                                        wasModified = true;
+                                        return { ...tx, status: 'Approved' };
+                                    }
+                                }
+                                return tx;
+                            });
+                            if (wasModified) { safeSetLS(key, JSON.stringify(userState)); }
+                        }
+                    }
+                }
+            }
+
+            function showScreen(targetId) {
+                if (miningCooldownInterval) { clearInterval(miningCooldownInterval); miningCooldownInterval = null; }
+
+                document.querySelectorAll('#app-container main .screen').forEach(s => s.classList.remove('active'));
+                const targetScreen = document.getElementById(targetId); if (targetScreen) targetScreen.classList.add('active');
+                if(targetId !== 'admin') {
+                    document.querySelectorAll('nav .nav-button').forEach(b => b.classList.remove('active'));
+                    const activeBtn = document.querySelector(`.nav-button[data-target="${targetId}"]`);
+                    if(activeBtn) activeBtn.classList.add('active');
+                }
+                if (targetId === 'home') { renderAchievements(); initializeFlagQuiz(); }
+                if (targetId === 'wallet') { checkAndAutoApproveWithdrawals(); renderTransactionHistory(); }
+                if (targetId === 'news') { renderNewsFeed(); }
+                if (targetId === 'quiz') { updateQuizUI(); }
+                if (targetId === 'tictactoe') { updateTTTButtonState(); }
+                if (targetId === 'mining') { initializeMiningGame(); }
+                if (targetId === 'task') { updateMysteryBoxUI(); }
+            }
+            
+            function getDeviceType() {
+                const ua = navigator.userAgent;
+                if (/iPad|iPhone|iPod/.test(ua) && !window.MSStream) return "iOS Device";
+                if (/Android/.test(ua)) return "Android";
+                return "Web/Desktop";
+            }
+
+            const auth = {
+                usersDB: (() => JSON.parse(safeGetLS('proSpinUsersDB') || '[]'))(),
+                saveUsersDB() { safeSetLS('proSpinUsersDB', JSON.stringify(this.usersDB)); },
+                check() {
+                    const email = safeGetLS('proSpinCurrentUser');
+                    if (email) {
+                        const user = this.usersDB.find(u => u.email === email);
+                        if(user) { loadData(user); initializeApp(); } else { this.logout(); }
+                    } else { dom.authScreen.style.display = 'flex'; dom.appContainer.style.display = 'none'; renderAuthForms(); }
+                },
+                signup(fname, lname, email, password, refCode) {
+                    const err = document.getElementById('signup-error'); err.textContent = '';
+                    if (!fname.trim() || !lname.trim() || !email.trim() || !password.trim()) return err.textContent = 'All fields are required.';
+                    if (this.usersDB.some(u => u.email.toLowerCase() === email.toLowerCase())) return err.textContent = 'Email already exists.';
+                    
+                    let refEmail = null;
+                    if (refCode && refCode.trim() !== '') {
+                        const normRef = refCode.trim().toUpperCase(); const referrer = this.usersDB.find(u => (u.firstName.toUpperCase() + '123') === normRef);
+                        if (referrer) {
+                            refEmail = referrer.email;
+                            const refStateKey = `proSpinAppState_${referrer.email}`; const refStateJSON = safeGetLS(refStateKey);
+                            if (refStateJSON) {
+                                const refState = JSON.parse(refStateJSON);
+                                refState.coins = (refState.coins || 0) + 20; refState.totalReferrals = (refState.totalReferrals || 0) + 1;
+                                checkReferralAchievements(refState); safeSetLS(refStateKey, JSON.stringify(refState));
+                            }
+                        }
+                    }
+
+                    const newUser = { firstName: fname, lastName: lname, email: email.toLowerCase(), password, referredBy: refEmail, isBanned: false, device: getDeviceType() };
+                    this.usersDB.push(newUser); this.saveUsersDB(); this.login(email, password, 10);
+                },
+                login(email, password, coinsOnFirstLogin = 0) { 
+                    const err = document.getElementById('login-error'); err.textContent = '';
+                    const user = this.usersDB.find(u => u.email.toLowerCase() === email.toLowerCase());
+                    if (!user || user.password !== password) return err.textContent = 'Invalid credentials.';
+                    if (user.isBanned) return err.textContent = 'Your account has been suspended.';
+                    safeSetLS('proSpinCurrentUser', user.email); loadData(user, coinsOnFirstLogin); initializeApp();
+                },
+                logout() { safeRemoveLS('proSpinCurrentUser'); state = {}; dom.appContainer.style.display = 'none'; dom.authScreen.style.display = 'flex'; renderAuthForms(); }
+            };
+            
+            function renderAuthForms(){
+                dom.authScreen.innerHTML = `
+                    <div id="login-view" class="auth-card"><h2>Login</h2><p class="auth-error" id="login-error"></p><input type="email" id="login-email" class="input-field" placeholder="Email"><input type="password" id="login-password" class="input-field" placeholder="Password"><button id="login-btn" class="button">Login</button><a id="show-signup" class="auth-toggle-link">Don't have an account? Sign Up</a></div>
+                    <div id="signup-view" class="auth-card hidden"><h2>Sign Up</h2><p class="auth-error" id="signup-error"></p><input type="text" id="signup-fname" class="input-field" placeholder="First Name"><input type="text" id="signup-lname" class="input-field" placeholder="Last Name"><input type="email" id="signup-email" class="input-field" placeholder="Email"><input type="password" id="signup-password" class="input-field" placeholder="Password"><input type="text" id="signup-ref" class="input-field" placeholder="Referral Code (Optional)"><button id="signup-btn" class="button">Sign Up</button><a id="show-login" class="auth-toggle-link">Already have an account? Login</a></div>`;
+                document.getElementById('show-signup').addEventListener('click', () => { document.getElementById('login-view').classList.add('hidden'); document.getElementById('signup-view').classList.remove('hidden'); });
+                document.getElementById('show-login').addEventListener('click', () => { document.getElementById('signup-view').classList.add('hidden'); document.getElementById('login-view').classList.remove('hidden'); });
+                document.getElementById('login-btn').addEventListener('click', () => auth.login(document.getElementById('login-email').value, document.getElementById('login-password').value));
+                document.getElementById('signup-btn').addEventListener('click', () => auth.signup(document.getElementById('signup-fname').value, document.getElementById('signup-lname').value, document.getElementById('signup-email').value, document.getElementById('signup-password').value, document.getElementById('signup-ref').value));
+            }
+
+            function initializeApp() {
+                dom.authScreen.style.display = 'none';
+                dom.appContainer.style.display = 'flex';
+                dom.header.style.display = 'flex';
+                dom.nav.style.display = 'flex';
+
+                if (JSON.parse(safeGetLS('proSpinNewsFeed') || '[]').length === 0) {
+                    const defaultPost = {
+                        id: 1,
+                        title: "Welcome to Pro Spin App!",
+                        caption: "Welcome! Explore our features: Spin the wheel daily for prizes, test your knowledge with quizzes, play mini-games, earn by mining, refer friends for bonuses, and withdraw your earnings directly to your wallet. Enjoy your time and happy earning!",
+                        image: "https://i.ibb.co/4wx02y6c/unnamed-4.png"
+                    };
+                    safeSetLS('proSpinNewsFeed', JSON.stringify([defaultPost]));
+                }
+                
+                checkAndAutoApproveWithdrawals();
+
+                dom.userGreeting.textContent = `Welcome, ${state.user.firstName}!`;
+                const referralCode = state.user.firstName.toUpperCase() + '123';
+                dom.referralCode.textContent = referralCode;
+                const text = `Hey! I'm using Pro Spin App. Join with my code *${referralCode}* to get bonus coins! @Proearningappbot`;
+                dom.telegramShareBtn.href = `https://t.me/share/url?text=${encodeURIComponent(text)}`;
+                dom.supportMailBtn.href = 'https://t.me/groot9878';
+                dom.supportMailBtn.target = '_blank';
+                
+                checkStreak();
+                renderDailyRewards();
+                updateCoinDisplay();
+                updateWalletUI();
+                renderReferredMembers();
+                showScreen('home');
+            }
+
+            window.showAdminLogin = function() {
+                if (isAdminLoggedIn) { dom.header.style.display = 'none'; dom.nav.style.display = 'none'; showScreen('admin'); return; }
+                const code = prompt("Enter admin code:");
+                if (code === "GEDOLADOCANDO") { isAdminLoggedIn = true; dom.header.style.display = 'none'; dom.nav.style.display = 'none'; renderAdminPanel(); showScreen('admin'); } else if (code) { alert("Incorrect code."); }
+            };
+            function adminLogout() { isAdminLoggedIn = false; dom.adminScreen.classList.remove('active'); dom.header.style.display = 'flex'; dom.nav.style.display = 'flex'; auth.check(); }
+            
+            function renderAdminPanel() {
+                dom.adminRequestList.innerHTML = '';
+                dom.adminUserList.innerHTML = '';
+                let hasPendingWithdrawals = false;
+                
+                checkAndAutoApproveWithdrawals();
+
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith('proSpinAppState_')) {
+                        const userEmail = key.replace('proSpinAppState_', ''); const userState = JSON.parse(safeGetLS(key));
+                        if (userState.transactionHistory) {
+                            const pendingTxs = userState.transactionHistory.filter(tx => tx.status === 'Pending' && tx.type === 'withdrawal');
+                            if (pendingTxs.length > 0) hasPendingWithdrawals = true;
+                            pendingTxs.forEach(tx => {
+                                const item = document.createElement('div'); item.className = 'admin-request-item';
+                                item.innerHTML = `<div class="admin-request-details"><span class="user-email">${userEmail}</span><span><b>Holder:</b> ${tx.holderName}</span><span><b>Number:</b> ${tx.walletNumber} (${tx.currency})</span><span><strong>Amount: ${tx.amount} Coins</strong></span></div><button class="approve-btn" data-user-email="${userEmail}" data-tx-id="${tx.id}">Approve</button>`;
+                                dom.adminRequestList.appendChild(item);
+                            });
+                        }
+                    }
+                }
+                if (!hasPendingWithdrawals) dom.adminRequestList.innerHTML = '<p>No pending withdrawal requests.</p>';
+                
+                const allUsers = auth.usersDB; 
+                const userListTitle = dom.adminUserList.previousElementSibling;
+                if (userListTitle && userListTitle.tagName === 'H3') {
+                    userListTitle.innerHTML = `All Registered Users (${allUsers.length}) <small style="font-weight: normal; font-size: 0.8em; color: var(--admin-light-text-color);"><br><b>Important:</b> This app uses browser localStorage for data. The user list below only shows accounts registered in <b>this specific browser</b>. A global user list is not possible without a central server and database.</small>`;
+                }
+
+                dom.adminUserList.innerHTML = '';
+                if (allUsers.length > 0) {
+                    allUsers.forEach(user => {
+                        const item = document.createElement('div'); item.className = `admin-user-item ${user.isBanned ? 'banned-user' : ''}`;
+                        const banButtonHTML = user.isBanned ? `<button class="unban-btn" data-user-email="${user.email}">Unban</button>` : `<button class="ban-btn" data-user-email="${user.email}">Ban</button>`;
+                        item.innerHTML = `<div class="admin-user-info"><strong>${user.firstName} ${user.lastName}</strong><span>${user.email}</span><span style="color: var(--admin-secondary-color); font-size: 0.8em;">Device: ${user.device || 'N/A'}</span></div><div class="admin-user-actions">${banButtonHTML}<button class="send-coins-btn" data-user-email="${user.email}">Send Coins</button></div>`;
+                        dom.adminUserList.appendChild(item);
+                    });
+                } else { dom.adminUserList.innerHTML = '<p>No users registered in this browser.</p>'; }
+                
+                addAdminButtonListeners();
+            }
+
+            function addAdminButtonListeners() {
+                document.querySelectorAll('#admin .approve-btn').forEach(btn => btn.addEventListener('click', e => approveTransaction(e.target.dataset.userEmail, e.target.dataset.txId)));
+                document.querySelectorAll('#admin .send-coins-btn').forEach(btn => btn.addEventListener('click', e => promptSendCoins(e.target.dataset.userEmail)));
+                document.querySelectorAll('#admin .ban-btn, #admin .unban-btn').forEach(btn => btn.addEventListener('click', e => toggleBanStatus(e.target.dataset.userEmail)));
+            }
+            function approveTransaction(userEmail, txId) {
+                const stateKey = `proSpinAppState_${userEmail}`; const userState = JSON.parse(safeGetLS(stateKey));
+                if (userState && userState.transactionHistory) {
+                    const txIndex = userState.transactionHistory.findIndex(tx => tx.id.toString() === txId.toString());
+                    if (txIndex > -1) { userState.transactionHistory[txIndex].status = 'Approved'; safeSetLS(stateKey, JSON.stringify(userState)); alert(`Transaction approved.`); renderAdminPanel(); }
+                }
+            }
+            function promptSendCoins(userEmail) {
+                const amountStr = prompt(`Enter coin amount to send to ${userEmail}:`);
+                if (amountStr) { const amount = parseFloat(amountStr); if (!isNaN(amount) && amount > 0) adminSendCoins(userEmail, amount); else alert("Invalid amount."); }
+            }
+            function adminSendCoins(targetUserEmail, amount) {
+                const stateKey = `proSpinAppState_${targetUserEmail}`; const userStateJSON = safeGetLS(stateKey);
+                if (userStateJSON) {
+                    let userState = JSON.parse(userStateJSON); userState.coins = (userState.coins || 0) + amount;
+                    userState.transactionHistory.push({ id: Date.now(), type: 'admin_send', holderName: 'Received from Admin', walletNumber: `+${amount} coins`, amount: amount, status: 'Completed' });
+                    safeSetLS(stateKey, JSON.stringify(userState)); alert(`Sent ${amount} coins.`);
+                } else { alert(`Could not find user data.`); }
+            }
+            function toggleBanStatus(userEmail) {
+                const userIndex = auth.usersDB.findIndex(u => u.email === userEmail);
+                if (userIndex > -1) {
+                    const user = auth.usersDB[userIndex]; user.isBanned = !user.isBanned;
+                    auth.saveUsersDB(); alert(`User ${user.firstName} has been ${user.isBanned ? 'banned' : 'unbanned'}.`); renderAdminPanel();
+                }
+            }
+
+            // --- USER APP DATA & FUNCTIONS ---
+            const WHEEL_PRIZES = [10, 1, 3, 1, 2, 1, 5, 0.50, 2, 1];
+            const QUIZ_QUESTIONS = [ { q: "Capital of France?", o: ["Berlin", "Madrid", "Paris", "Rome"], a: 2 }, { q: "Which planet is known as the Red Planet?", o: ["Earth", "Mars", "Jupiter", "Venus"], a: 1 }, { q: "What is the largest mammal?", o: ["Elephant", "Blue Whale", "Giraffe", "Shark"], a: 1 }, { q: "Who wrote 'Romeo and Juliet'?", o: ["Dickens", "Shakespeare", "Austen", "Twain"], a: 1 }, { q: "What is the chemical symbol for water?", o: ["O2", "CO2", "H2O", "NaCl"], a: 2 }, { q: "Which country is home to the kangaroo?", o: ["S. Africa", "India", "Australia", "Brazil"], a: 2 }, { q: "What is the tallest mountain in the world?", o: ["K2", "Everest", "Lhotse", "Makalu"], a: 1 }, { q: "Who painted the Mona Lisa?", o: ["Van Gogh", "Picasso", "Da Vinci", "Monet"], a: 2 }, { q: "What is the currency of Japan?", o: ["Yuan", "Won", "Yen", "Baht"], a: 2 }, { q: "What is the capital of Nepal?", o: ["Pokhara", "Lalitpur", "Kathmandu", "Bhaktapur"], a: 2 }, { q: "What is the powerhouse of the cell?", o: ["Nucleus", "Ribosome", "Mitochondrion"], a: 2 }, { q: "How many continents are there?", o: ["5", "6", "7", "8"], a: 2 }, { q: "Who invented the telephone?", o: ["T. Edison", "A. Einstein", "A. G. Bell"], a: 2 }, { q: "What is the hardest natural substance on Earth?", o: ["Gold", "Iron", "Diamond", "Platinum"], a: 2 }, { q: "Which is the largest ocean on Earth?", o: ["Atlantic", "Indian", "Arctic", "Pacific"], a: 3 }];
+            const FLAG_QUIZ_QUESTIONS = [ { id: 0, code: 'us', options: ["UK", "USA", "Australia", "Liberia"], answer: 1 }, { id: 1, code: 'ca', options: ["Canada", "Peru", "Austria", "Malta"], answer: 0 }, { id: 2, code: 'in', options: ["Ireland", "Pakistan", "India", "Niger"], answer: 2 }, { id: 3, code: 'np', options: ["Bhutan", "Bangladesh", "Myanmar", "Nepal"], answer: 3 }, { id: 4, code: 'br', options: ["Brazil", "Portugal", "Mexico", "Argentina"], answer: 0 }];
+            const ALL_ACHIEVEMENTS = { 
+                'streak3': { title: "3-Day Streak", reward: 10, svg: '<path d="M12.01 21.49L23.54 22l-1.55-10.84-7.61-7.62-7.62 7.62L5.47 22l11.54-.51-4.1-4.1 4.1 4.1z"/>' }, 
+                'streak7': { title: "7-Day Streak", reward: 25, svg: '<path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7v-5z"/>' }, 
+                'quizMaster': { title: "Quiz Master", reward: 15, svg: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>' }, 
+                'referrer1': { title: "1 Friend Referred", reward: 8, svg: '<path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>' }, 
+                'referrer5': { title: "5 Friends Referred", reward: 25, svg: '<path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>' } 
+            };
+            
+            function checkReferralAchievements(targetState) {
+                const count = targetState.totalReferrals; const achievements = targetState.achievements;
+                if (count >= 1 && !achievements.referrer1) { achievements.referrer1 = true; targetState.coins += ALL_ACHIEVEMENTS.referrer1.reward; }
+                if (count >= 5 && !achievements.referrer5) { achievements.referrer5 = true; targetState.coins += ALL_ACHIEVEMENTS.referrer5.reward; }
+            }
+
+            function checkAchievements() { 
+                if (state.streakDay >= 4 && !state.achievements.streak3) { state.achievements.streak3 = true; addCoins(ALL_ACHIEVEMENTS.streak3.reward, true); showModal('Unlocked!', `3-Day Streak badge & ${ALL_ACHIEVEMENTS.streak3.reward} coins!`); renderAchievements(); } 
+                if (state.correctlyAnsweredQuestions.length >= QUIZ_QUESTIONS.length && !state.achievements.quizMaster) { state.achievements.quizMaster = true; addCoins(ALL_ACHIEVEMENTS.quizMaster.reward, true); showModal('Unlocked!', `Quiz Master badge & ${ALL_ACHIEVEMENTS.quizMaster.reward} coins!`); renderAchievements(); }
+            }
+            function renderAchievements() { dom.achievementsContainer.innerHTML = ''; for (const key in ALL_ACHIEVEMENTS) { const a = ALL_ACHIEVEMENTS[key]; const unlocked = state.achievements[key]; const div = document.createElement('div'); div.className = `achievement-badge ${unlocked ? 'unlocked' : ''}`; div.innerHTML = `<div class="badge-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${unlocked ? 'var(--gold-color)' : 'currentColor'}">${a.svg}</svg></div><p>${a.title}</p>`; dom.achievementsContainer.appendChild(div); } }
+            function renderReferredMembers() {
+                const members = auth.usersDB.filter(u => u.referredBy === state.user.email);
+                state.totalReferrals = members.length; checkReferralAchievements(state);
+                dom.referralListContainer.innerHTML = ''; if (members.length > 0) { const h = document.createElement('h3'); h.textContent = `Your Members (${members.length})`; const ul = document.createElement('ul'); members.forEach(m => { const li = document.createElement('li'); li.textContent = `${m.firstName} ${m.lastName}`; ul.appendChild(li); }); dom.referralListContainer.append(h, ul); }
+            }
+            function updateWalletUI() { dom.currencyBtns.forEach(b => b.classList.toggle('active', b.dataset.currency === state.selectedCurrency)); dom.nprWallets.classList.toggle('hidden', state.selectedCurrency !== 'NPR'); dom.inrWallets.classList.toggle('hidden', state.selectedCurrency !== 'INR'); saveData(); }
+            function checkStreak() { if (!state.lastClaimDate) return; const last = new Date(state.lastClaimDate); const yday = new Date(); yday.setDate(yday.getDate() - 1); if (getDateString(last) !== getDateString(yday) && getDateString(last) !== today()) state.streakDay = 1; }
+            function renderDailyRewards() { dom.dailyRewardsContainer.innerHTML = ''; const coinLogoSVG = `<svg class="coin-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#f1c40f"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>`; const canClaim = state.lastClaimDate !== today(); for (let i = 1; i <= 7; i++) { const div = document.createElement('div'); div.className = 'reward-day'; if (i < state.streakDay) div.classList.add('claimed'); else if (i === state.streakDay && canClaim) { div.classList.add('claimable'); div.addEventListener('click', () => claimReward(i)); } div.innerHTML = `<div class="day-label">Day ${i}</div><div class="coin-reward">${i} ${coinLogoSVG}</div>`; dom.dailyRewardsContainer.appendChild(div); } }
+            function claimReward(day) { 
+                addCoins(day); showModal('Bonus Claimed!', `You got ${day} coins for Day ${state.streakDay}!`); 
+                if (day === 7 && !state.achievements.streak7) {
+                     state.achievements.streak7 = true; 
+                     addCoins(ALL_ACHIEVEMENTS.streak7.reward, true); 
+                     setTimeout(()=>showModal('Unlocked!', `7-Day Streak badge & ${ALL_ACHIEVEMENTS.streak7.reward} coins!`), 1000); 
+                     renderAchievements();
+                }
+                state.lastClaimDate = today(); state.streakDay = state.streakDay >= 7 ? 1 : state.streakDay + 1; saveData(); renderDailyRewards(); checkAchievements(); 
+            }
+
+            function claimMysteryBox() {
+                if (dom.mysteryBoxImg.classList.contains('claimed')) {
+                    showModal('Already Claimed', 'You can only open the mystery box once per day. Come back tomorrow!');
+                    return;
+                }
+                dom.mysteryBoxImg.classList.add('opening');
+                
+                setTimeout(() => {
+                    const prize = MYSTERY_BOX_PRIZES[Math.floor(Math.random() * MYSTERY_BOX_PRIZES.length)];
+                    addCoins(prize);
+                    state.lastMysteryBoxClaim = today();
+                    saveData();
+                    
+                    dom.coinAnimationContainer.innerHTML = '';
+                    for (let i = 0; i < 20; i++) {
+                        const coin = document.createElement('div');
+                        coin.className = 'falling-coin';
+                        coin.innerHTML = '¢';
+                        coin.style.left = `${Math.random() * 100}%`;
+                        coin.style.animationDelay = `${Math.random() * 1}s`;
+                        dom.coinAnimationContainer.appendChild(coin);
+                    }
+                    setTimeout(() => dom.coinAnimationContainer.innerHTML = '', 2000);
+
+                    setTimeout(() => {
+                         showModal('Surprise!', `You found ${prize} coins in the mystery box!`);
+                    }, 500);
+                    
+                    dom.mysteryBoxImg.classList.remove('opening');
+                    updateMysteryBoxUI();
+                }, 850);
+            }
+
+            function updateMysteryBoxUI() {
+                if (state.lastMysteryBoxClaim === today()) {
+                    dom.mysteryBoxImg.classList.add('claimed');
+                    dom.mysteryBoxImg.classList.remove('claimable');
+                    dom.mysteryBoxStatus.textContent = "You've already claimed your box for today.";
+                } else {
+                    dom.mysteryBoxImg.classList.remove('claimed');
+                    dom.mysteryBoxImg.classList.add('claimable');
+                    dom.mysteryBoxStatus.textContent = "Click to open!";
+                }
+            }
+
+            let isSpinning = false;
+            dom.spinButton.addEventListener('click', () => { if (isSpinning || state.lastSpin === today()) { showModal('Spin Limit', 'You can only spin once per day.'); return; } isSpinning = true; state.lastSpin = today(); saveData(); const rot = 360 * 5 + Math.random() * 360; dom.spinWheel.style.transform = `rotate(${rot}deg)`; setTimeout(() => { const idx = Math.floor((360 - (rot % 360)) / (360 / WHEEL_PRIZES.length)); const prize = WHEEL_PRIZES[idx]; addCoins(prize); showModal('Winner!', `You won ${prize} coins!`); isSpinning = false; }, 5000); });
+            
+            let currentQuestionIndex = -1;
+            function updateQuizUI() { if (state.lastQuizPlayDate !== today()) { state.quizzesPlayedToday = 0; state.questionsAskedToday = []; saveData(); } const left = 10 - state.quizzesPlayedToday; dom.quizLimitText.textContent = `Attempts left: ${left}/10`; if (left <= 0) { dom.questionText.textContent = "No more quizzes today. Come back tomorrow!"; dom.answerOptionsContainer.innerHTML = ''; } else { loadQuestion(); } }
+            function loadQuestion() { const avail = QUIZ_QUESTIONS.map((_, i) => i).filter(i => !state.questionsAskedToday.includes(i)); if (avail.length === 0) { dom.questionText.textContent = "All questions answered for today!"; dom.answerOptionsContainer.innerHTML = ''; return; } currentQuestionIndex = avail[Math.floor(Math.random() * avail.length)]; const q = QUIZ_QUESTIONS[currentQuestionIndex]; dom.questionText.textContent = q.q; dom.answerOptionsContainer.innerHTML = ''; q.o.forEach((opt, i) => { const btn = document.createElement('button'); btn.className = 'answer-btn'; btn.textContent = opt; btn.onclick = () => checkAnswer(i, btn); dom.answerOptionsContainer.appendChild(btn); }); }
+            function checkAnswer(idx, btn) { if (state.quizzesPlayedToday >= 10) return; state.lastQuizPlayDate = today(); state.quizzesPlayedToday++; state.questionsAskedToday.push(currentQuestionIndex); const q = QUIZ_QUESTIONS[currentQuestionIndex]; dom.answerOptionsContainer.querySelectorAll('.answer-btn').forEach(b => b.disabled = true); if (idx === q.a) { addCoins(0.50); if(!state.correctlyAnsweredQuestions.includes(currentQuestionIndex)) { state.correctlyAnsweredQuestions.push(currentQuestionIndex); } btn.classList.add('correct'); } else { btn.classList.add('incorrect'); dom.answerOptionsContainer.children[q.a].classList.add('correct'); } saveData(); checkAchievements(); setTimeout(updateQuizUI, 1500); }
+            
+            let currentFlagQuestion = null;
+            function initializeFlagQuiz() { if (state.flagQuiz.lastPlayDate !== today()) { state.flagQuiz = { playsToday: 0, lastPlayDate: today(), questionsAskedToday: [] }; } updateFlagQuizUI(); saveData(); }
+            function updateFlagQuizUI() { const left = 5 - state.flagQuiz.playsToday; dom.flagQuizPlaysLeft.textContent = `Plays left: ${left}/5`; if (left <= 0) { dom.flagQuizOptionsContainer.innerHTML = '<p>No more rounds today.</p>'; dom.flagQuizImage.style.display = 'none'; } else { dom.flagQuizImage.style.display = 'block'; loadNextFlagQuestion(); } }
+            function loadNextFlagQuestion() {
+                if (state.flagQuiz.playsToday >= 5) { updateFlagQuizUI(); return; } 
+                const askedIds = state.flagQuiz.questionsAskedToday || [];
+                const avail = FLAG_QUIZ_QUESTIONS.filter(q => !askedIds.includes(q.id)); 
+                if (avail.length === 0) { dom.flagQuizOptionsContainer.innerHTML = "<p>All flags answered for today!</p>"; dom.flagQuizImage.style.display = 'none'; return; } 
+                
+                dom.flagQuizImage.style.opacity = 0;
+                dom.flagQuizImage.style.transform = 'scale(0.8)';
+                
+                setTimeout(() => {
+                    currentFlagQuestion = avail[Math.floor(Math.random() * avail.length)]; 
+                    dom.flagQuizImage.src = `https://flagcdn.com/w160/${currentFlagQuestion.code}.png`; 
+                    dom.flagQuizImage.onload = () => {
+                        dom.flagQuizImage.style.opacity = 1;
+                        dom.flagQuizImage.style.transform = 'scale(1)';
+                    };
+                    dom.flagQuizOptionsContainer.innerHTML = ''; 
+                    currentFlagQuestion.options.forEach((opt, i) => { const btn = document.createElement('button'); btn.className = 'mini-game-btn'; btn.textContent = opt; btn.onclick = () => checkFlagAnswer(i, btn); dom.flagQuizOptionsContainer.appendChild(btn); });
+                }, 300);
+            }
+            function checkFlagAnswer(idx, btn) { 
+                state.flagQuiz.playsToday++; 
+                state.flagQuiz.lastPlayDate = today(); 
+                state.flagQuiz.questionsAskedToday.push(currentFlagQuestion.id);
+                const btns = dom.flagQuizOptionsContainer.querySelectorAll('.mini-game-btn'); 
+                btns.forEach(b => b.disabled = true); 
+                if (idx === currentFlagQuestion.answer) { addCoins(2); btn.classList.add('correct'); showModal('Correct!', 'You earned 2 coins!'); } 
+                else { btn.classList.add('incorrect'); btns[currentFlagQuestion.answer].classList.add('correct'); } 
+                saveData();
+                setTimeout(updateFlagQuizUI, 1500); 
+            }
+
+            const TTT_COOLDOWN = 12 * 60 * 60 * 1000; const WIN_COMBOS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]; let tttState = {}, tttCountdownInterval;
+            function updateTTTButtonState() { clearInterval(tttCountdownInterval); const timeSince = Date.now() - state.lastTTTPlayTime; if (state.lastTTTPlayTime && timeSince < TTT_COOLDOWN) { dom.startTTTBtn.disabled = true; const timer = () => { const rem = TTT_COOLDOWN - (Date.now() - state.lastTTTPlayTime); if (rem <= 0) { clearInterval(tttCountdownInterval); dom.startTTTBtn.disabled = false; dom.startTTTBtn.textContent = 'Play Match'; return; } const h = Math.floor(rem/36e5), m = Math.floor((rem%36e5)/6e4), s = Math.floor((rem%6e4)/1e3); dom.startTTTBtn.textContent = `Wait ${h}h ${m}m ${s}s`; }; timer(); tttCountdownInterval = setInterval(timer, 1000); } else { dom.startTTTBtn.disabled = false; dom.startTTTBtn.textContent = 'Play Match'; } }
+            function startTTTMatch() { if (state.coins < 10) { showModal('Not Eligible', 'You need at least 10 coins to play.'); return; } tttState = { pScore: 0, aiScore: 0, round: 0 }; dom.startTTTBtn.style.display = 'none'; startNewTTTRound(); }
+            function startNewTTTRound() { tttState.round++; tttState.board = Array(9).fill(''); tttState.isRoundOver = false; tttState.isPlayerTurn = true; updateTTTScoreboard(); renderTTTBoard(); dom.tttStatusText.textContent = "Your Turn (X)"; dom.tttGameBoard.style.pointerEvents = 'auto'; }
+            function updateTTTScoreboard() { dom.tttScoreboard.textContent = `Player: ${tttState.pScore} - AI: ${tttState.aiScore}`; dom.tttRoundText.textContent = `Round ${tttState.round}`; }
+            function renderTTTBoard() { dom.tttGameBoard.innerHTML = ''; tttState.board.forEach((c, i) => { const cell = document.createElement('div'); cell.className = `cell ${c ? c.toLowerCase() : ''}`; cell.textContent = c; cell.dataset.index = i; cell.addEventListener('click', handleTTTCellClick); dom.tttGameBoard.appendChild(cell); }); }
+            function handleTTTCellClick(e) { if (tttState.isRoundOver || !tttState.isPlayerTurn) return; const i = parseInt(e.target.dataset.index); if (tttState.board[i] !== '') return; tttState.board[i] = 'X'; renderTTTBoard(); if (checkTTTWinner('X')) { handleRoundOver('win'); return; } if (tttState.board.every(c => c)) { handleRoundOver('draw'); return; } tttState.isPlayerTurn = false; dom.tttStatusText.textContent = "AI's Turn (O)"; setTimeout(aiMove, 700); }
+            function aiMove() { if (tttState.isRoundOver) return; tttState.board[findBestMove()] = 'O'; renderTTTBoard(); if (checkTTTWinner('O')) { handleRoundOver('lose'); return; } if (tttState.board.every(c => c)) { handleRoundOver('draw'); return; } tttState.isPlayerTurn = true; dom.tttStatusText.textContent = "Your Turn (X)"; }
+            function findBestMove() { for (let i = 0; i < 9; i++) if (tttState.board[i] === '') { tttState.board[i] = 'O'; if (checkTTTWinner('O')) { tttState.board[i] = ''; return i; } tttState.board[i] = ''; } for (let i = 0; i < 9; i++) if (tttState.board[i] === '') { tttState.board[i] = 'X'; if (checkTTTWinner('X')) { tttState.board[i] = ''; return i; } tttState.board[i] = ''; } if (tttState.board[4] === '') return 4; const corners = [0, 2, 6, 8].filter(i => tttState.board[i] === ''); if (corners.length > 0) return corners[0]; return tttState.board.findIndex(c => c === ''); }
+            const checkTTTWinner = p => WIN_COMBOS.some(c => c.every(i => tttState.board[i] === p));
+            function handleRoundOver(result) { tttState.isRoundOver = true; dom.tttGameBoard.style.pointerEvents = 'none'; let msg = ''; if (result === 'win') { tttState.pScore++; msg = `You won Round ${tttState.round}!`; } else if (result === 'lose') { tttState.aiScore++; msg = `AI won Round ${tttState.round}.`; } else { msg = `Round ${tttState.round} is a draw.`; } updateTTTScoreboard(); if (tttState.pScore >= 2) handleMatchOver('win'); else if (tttState.aiScore >= 2) handleMatchOver('lose'); else showModal('Round Over', msg, startNewTTTRound); }
+            function handleMatchOver(result) { let title, msg; if (result === 'win') { addCoins(5); title = 'Match Won!'; msg = `You won the match and earned 5 coins!`; } else { addCoins(-5); title = 'Match Lost!'; msg = `You lost the match. 5 coins have been deducted.`; } showModal(title, msg); state.lastTTTPlayTime = Date.now(); saveData(); updateTTTButtonState(); dom.startTTTBtn.style.display = 'block'; }
+            
+            const TAP_COOLDOWN = 2 * 60 * 60 * 1000;
+            
+            function initializeMiningGame() {
+                const now = Date.now();
+                const profitRate = MINING_UPGRADES.profit[state.mining.profitLevel].rate + (state.mining.profitBonus || 0);
+                const passiveTimeDiff = (now - (state.mining.lastPassiveClaim || now)) / 1000 / 3600;
+                const passiveProfit = passiveTimeDiff * profitRate;
+                if(passiveProfit > 0) addCoins(passiveProfit);
+                state.mining.lastPassiveClaim = now;
+                
+                updateMiningUI();
+                renderMiningUpgrades();
+                saveData();
+            }
+            
+            function updateMiningUI() {
+                dom.tappedBalanceDisplay.textContent = state.coins.toFixed(4);
+                dom.profitPerHourDisplay.textContent = (MINING_UPGRADES.profit[state.mining.profitLevel].rate + (state.mining.profitBonus || 0)).toFixed(4);
+                
+                const now = Date.now();
+                if (miningCooldownInterval) { clearInterval(miningCooldownInterval); miningCooldownInterval = null; }
+                
+                let cooldownUntil = state.mining.cooldownUntil || null;
+                if (cooldownUntil && now >= cooldownUntil) {
+                    state.mining.cooldownUntil = null;
+                    state.mining.tapsMade = 0;
+                    cooldownUntil = null;
+                    saveData();
+                }
+
+                if (cooldownUntil) {
+                    dom.tapCoin.classList.add('cooldown');
+                    dom.miningTapsLeft.classList.add('hidden');
+                    dom.miningCooldownTimer.classList.remove('hidden');
+                    const updateTimer = () => {
+                        const rightNow = Date.now();
+                        const remaining = cooldownUntil - rightNow;
+                        if (remaining <= 0) {
+                            clearInterval(miningCooldownInterval);
+                            miningCooldownInterval = null;
+                            updateMiningUI();
+                        } else {
+                            const h = String(Math.floor(remaining / 36e5)).padStart(2, '0');
+                            const m = String(Math.floor((remaining % 36e5) / 6e4)).padStart(2, '0');
+                            const s = String(Math.floor((remaining % 6e4) / 1e3)).padStart(2, '0');
+                            dom.miningCooldownTimer.textContent = `Next Taps in: ${h}:${m}:${s}`;
+                        }
+                    };
+                    updateTimer();
+                    miningCooldownInterval = setInterval(updateTimer, 1000);
+                } else {
+                    dom.tapCoin.classList.remove('cooldown');
+                    dom.miningTapsLeft.classList.remove('hidden');
+                    dom.miningCooldownTimer.classList.add('hidden');
+                    const currentTapLimit = MINING_UPGRADES.tap[state.mining.tapLevel].limit + (state.mining.tapBonus || 0);
+                    dom.miningTapsLeft.textContent = `Taps Left: ${currentTapLimit - state.mining.tapsMade}/${currentTapLimit}`;
+                }
+            }
+
+            function handleMineTap(event) {
+                const now = Date.now();
+                if (state.mining.cooldownUntil && now < state.mining.cooldownUntil) return;
+                
+                const currentTapLimit = MINING_UPGRADES.tap[state.mining.tapLevel].limit + (state.mining.tapBonus || 0);
+                if (state.mining.tapsMade >= currentTapLimit) return;
+                
+                state.mining.tapsMade++;
+                addCoins(0.0001);
+                
+                if (state.mining.tapsMade >= currentTapLimit) {
+                    state.mining.cooldownUntil = now + TAP_COOLDOWN;
+                }
+                
+                const feedback = document.createElement('div');
+                feedback.className = 'tap-feedback';
+                feedback.textContent = '+0.0001';
+                const rect = dom.tapCoin.getBoundingClientRect();
+                const x = event.clientX || (event.touches && event.touches[0].clientX);
+                const y = event.clientY || (event.touches && event.touches[0].clientY);
+                feedback.style.left = `${x - rect.left}px`;
+                feedback.style.top = `${y - rect.top}px`;
+                dom.miningScreenContainer.appendChild(feedback);
+                setTimeout(() => feedback.remove(), 1200);
+
+                updateMiningUI();
+                saveData();
+            }
+
+            function renderMiningUpgrades() {
+                dom.miningBoostsContainer.innerHTML = '';
+
+                // Combo Pack Card
+                if (!state.mining.comboPackPurchased) {
+                    const comboCard = document.createElement('div');
+                    comboCard.className = 'boost-card';
+                    comboCard.innerHTML = `
+                        <p><strong>🔥 COMBO PACK (One Time)</strong></p>
+                        <p>Get <strong>+1000 Tap Limit</strong> & <strong>+0.0100 Profit/Hour</strong> permanently!</p>
+                        <p>Cost: <strong>1799 Coins</strong></p>
+                        <button id="buy-combo-pack-btn" class="button boost-button">Purchase</button>
+                    `;
+                    dom.miningBoostsContainer.appendChild(comboCard);
+                    const btn = document.getElementById('buy-combo-pack-btn');
+                    if (state.coins < 1799) btn.disabled = true;
+                    btn.addEventListener('click', buyComboPack);
+                }
+                
+                // Tap Limit Upgrade Card
+                const currentTapLevel = state.mining.tapLevel;
+                const tapCard = document.createElement('div');
+                tapCard.className = 'boost-card';
+                if (currentTapLevel < MINING_UPGRADES.tap.length - 1) {
+                    const nextTapLevel = MINING_UPGRADES.tap[currentTapLevel + 1];
+                    tapCard.innerHTML = `
+                        <p>Increase your tap limit. Current: <span class="boost-level">${MINING_UPGRADES.tap[currentTapLevel].limit + (state.mining.tapBonus || 0)} Taps</span></p>
+                        <p>Next Level: <strong>${nextTapLevel.limit + (state.mining.tapBonus || 0)} Taps</strong> for <strong>${nextTapLevel.cost} Coins</strong></p>
+                        <button id="buy-tap-upgrade-btn" class="button boost-button">Upgrade</button>
+                    `;
+                    dom.miningBoostsContainer.appendChild(tapCard);
+                    const btn = document.getElementById('buy-tap-upgrade-btn');
+                    if (state.coins < nextTapLevel.cost) btn.disabled = true;
+                    btn.addEventListener('click', buyTapUpgrade);
+                } else {
+                    tapCard.innerHTML = `<p>Tap Limit is at <span class="boost-level">Max Level</span> (${MINING_UPGRADES.tap[currentTapLevel].limit + (state.mining.tapBonus || 0)} Taps)</p>`;
+                    dom.miningBoostsContainer.appendChild(tapCard);
+                }
+
+                // Profit Per Hour Upgrade Card
+                const currentProfitLevel = state.mining.profitLevel;
+                const profitCard = document.createElement('div');
+                profitCard.className = 'boost-card';
+                if (currentProfitLevel < MINING_UPGRADES.profit.length - 1) {
+                    const nextProfitLevel = MINING_UPGRADES.profit[currentProfitLevel + 1];
+                     profitCard.innerHTML = `
+                        <p>Increase passive earning. Current: <span class="boost-level">${(MINING_UPGRADES.profit[currentProfitLevel].rate + (state.mining.profitBonus || 0)).toFixed(4)}/hr</span></p>
+                        <p>Next Level: <strong>${(nextProfitLevel.rate + (state.mining.profitBonus || 0)).toFixed(4)}/hr</strong> for <strong>${nextProfitLevel.cost} Coins</strong></p>
+                        <button id="buy-profit-upgrade-btn" class="button boost-button">Upgrade</button>
+                    `;
+                    dom.miningBoostsContainer.appendChild(profitCard);
+                    const btn = document.getElementById('buy-profit-upgrade-btn');
+                    if (state.coins < nextProfitLevel.cost) btn.disabled = true;
+                    btn.addEventListener('click', buyProfitUpgrade);
+                } else {
+                    profitCard.innerHTML = `<p>Profit/Hour is at <span class="boost-level">Max Level</span> (${(MINING_UPGRADES.profit[currentProfitLevel].rate + (state.mining.profitBonus || 0)).toFixed(4)}/hr)</p>`;
+                    dom.miningBoostsContainer.appendChild(profitCard);
+                }
+            }
+            
+            function buyComboPack() {
+                if (state.mining.comboPackPurchased || state.coins < 1799) return;
+                addCoins(-1799);
+                state.mining.comboPackPurchased = true;
+                state.mining.tapBonus = (state.mining.tapBonus || 0) + 1000;
+                state.mining.profitBonus = (state.mining.profitBonus || 0) + 0.0100;
+                saveData();
+                showModal('Combo Pack Activated!', 'Your Tap Limit and Profit/Hour have been permanently boosted!');
+                updateMiningUI();
+                renderMiningUpgrades();
+            }
+
+            function buyTapUpgrade() {
+                const currentLevel = state.mining.tapLevel;
+                if (currentLevel >= MINING_UPGRADES.tap.length - 1) return;
+                const nextLevel = MINING_UPGRADES.tap[currentLevel + 1];
+                if (state.coins >= nextLevel.cost) {
+                    addCoins(-nextLevel.cost);
+                    state.mining.tapLevel++;
+                    saveData();
+                    showModal('Upgraded!', `Your tap limit is now ${nextLevel.limit + (state.mining.tapBonus || 0)}!`);
+                    updateMiningUI();
+                    renderMiningUpgrades();
+                }
+            }
+
+            function buyProfitUpgrade() {
+                 const currentLevel = state.mining.profitLevel;
+                if (currentLevel >= MINING_UPGRADES.profit.length - 1) return;
+                const nextLevel = MINING_UPGRADES.profit[currentLevel + 1];
+                if (state.coins >= nextLevel.cost) {
+                    addCoins(-nextLevel.cost);
+                    state.mining.profitLevel++;
+                    saveData();
+                    showModal('Upgraded!', `Your profit is now ${(nextLevel.rate + (state.mining.profitBonus || 0)).toFixed(4)} coins per hour!`);
+                    updateMiningUI();
+                    renderMiningUpgrades();
+                }
+            }
+
+            function renderNewsFeed() {
+                const newsFeed = JSON.parse(safeGetLS('proSpinNewsFeed') || '[]'); dom.newsFeedList.innerHTML = '';
+                if (newsFeed.length === 0) { dom.newsFeedList.innerHTML = '<p style="text-align: center;">No announcements yet.</p>'; return; }
+                newsFeed.slice().reverse().forEach(post => {
+                    const postEl = document.createElement('div'); postEl.className = 'news-post';
+                    let imageHTML = post.image ? `<img src="${post.image}" alt="${post.title}" class="news-post-image">` : '';
+                    postEl.innerHTML = `${imageHTML}<h3 class="news-post-title">${post.title}</h3><p class="news-post-caption">${post.caption}</p>`;
+                    dom.newsFeedList.appendChild(postEl);
+                });
+            }
+            function renderTransactionHistory() {
+                dom.transactionHistoryList.innerHTML = ''; if (!state.transactionHistory || state.transactionHistory.length === 0) { dom.transactionHistoryList.innerHTML = '<p style="text-align:center;">No transactions yet.</p>'; return; }
+                state.transactionHistory.slice().reverse().forEach(tx => {
+                    const li = document.createElement('li'); li.className = 'transaction-item';
+                    const amountPrefix = tx.type === 'admin_send' ? '+' : '-';
+                    li.innerHTML = `<div class="transaction-details"><span class="holder-name">${tx.holderName}</span><span>${tx.walletNumber || tx.currency}</span><span><strong>${amountPrefix}${tx.amount} Coins</strong></span></div><span class="transaction-status ${tx.status.toLowerCase()}">${tx.status}</span>`;
+                    dom.transactionHistoryList.appendChild(li);
+                });
+            }function handleWithdraw() {
+                const holderName = dom.walletNameInput.value.trim(); const walletNumber = dom.walletNumberInput.value.trim(); const amount = parseFloat(dom.withdrawAmountInput.value);
+                if (!holderName || !walletNumber || !amount) { return showModal('Incomplete Details', 'Please fill in all withdrawal fields.'); }
+                if (isNaN(amount) || amount < 1000) { return showModal('Invalid Amount', `Minimum withdrawal is 1000 coins.`); }
+                if (amount > state.coins) { return showModal('Not Enough Coins', `You do not have enough coins to withdraw ${amount}.`); }
+                
+                const newTransaction = { id: Date.now(), type: 'withdrawal', holderName, walletNumber, amount, currency: state.selectedCurrency, status: 'Pending', requestTimestamp: Date.now() };
+                state.transactionHistory.push(newTransaction); addCoins(-amount);
+                dom.walletNameInput.value = ''; dom.walletNumberInput.value = ''; dom.withdrawAmountInput.value = '';
+                showModal('Request Submitted', `Your withdrawal for ${amount} coins is submitted.`);
+                renderTransactionHistory(); saveData();
+            }
+
+            // --- EVENT LISTENERS ---
+            dom.navButtons.forEach(b => b.addEventListener('click', () => showScreen(b.dataset.target)));
+            dom.goToSpinBtn.addEventListener('click', () => showScreen('spin'));
+            dom.currencyBtns.forEach(btn => btn.addEventListener('click', () => { state.selectedCurrency = btn.dataset.currency; updateWalletUI(); }));
+            dom.requestWithdrawalBtn.addEventListener('click', handleWithdraw);
+            dom.startTTTBtn.addEventListener('click', startTTTMatch);
+            dom.mysteryBoxImg.addEventListener('click', claimMysteryBox);
+            dom.logoutBtn.addEventListener('click', auth.logout);
+            dom.adminLogoutBtn.addEventListener('click', adminLogout);
+            dom.tapCoin.addEventListener('click', handleMineTap);
+            dom.tapCoin.addEventListener('touchstart', handleMineTap, {passive: true});
+            
+            auth.check();
+        });
+    </script>
+</body>
+</html>
