@@ -260,7 +260,7 @@
         <header>
             <div class="header-title">
                 <h1>Pro Spin App</h1>
-                <div class="admin-icon" onclick="showAdminLogin()">👤</div>
+                <div class="admin-icon">👤</div>
             </div>
             <div class="header-info">
                 <div id="user-greeting"></div>
@@ -479,6 +479,7 @@
                 newsFeedList: document.getElementById('news-feed-list'),
                 adminScreen: document.getElementById('admin'), adminLogoutBtn: document.getElementById('admin-logout-btn'),
                 adminRequestList: document.getElementById('admin-request-list'), adminUserList: document.getElementById('admin-user-list'),
+                adminIcon: document.querySelector('.admin-icon'),
                 miningScreenContainer: document.getElementById('mining-screen-container'), tapCoin: document.getElementById('tap-coin'), tappedBalanceDisplay: document.getElementById('tapped-balance-display'),
                 profitPerHourDisplay: document.getElementById('profit-per-hour'),
                 miningLimitInfo: document.getElementById('mining-limit-info'), miningCooldownTimer: document.getElementById('mining-cooldown-timer'), miningTapsLeft: document.getElementById('mining-taps-left'),
@@ -497,38 +498,12 @@
             
             let state = {};
 
-            // --- MINING GAME UPGRADES CONFIGURATION ---
             const MINING_UPGRADES = {
-                tap: [
-                    { limit: 100, cost: 0 },    // Level 0 (Base)
-                    { limit: 200, cost: 50 },   // Level 1
-                    { limit: 350, cost: 120 },  // Level 2
-                    { limit: 500, cost: 250 },  // Level 3
-                    { limit: 750, cost: 500 },  // Level 4
-                    { limit: 1000, cost: 900 }, // Level 5
-                    { limit: 1500, cost: 1600 },// Level 6
-                    { limit: 2000, cost: 2500 },// Level 7
-                    { limit: 3000, cost: 4000 },// Level 8
-                    { limit: 5000, cost: 7000 },// Level 9
-                    { limit: 7500, cost: 12000},// Level 10
-                    { limit: 10000, cost: 20000}// Level 11
-                ],
-                profit: [
-                    { rate: 0.0007, cost: 0 },    // Level 0
-                    { rate: 0.0010, cost: 200 },   // Level 1
-                    { rate: 0.0015, cost: 450 },   // Level 2
-                    { rate: 0.0022, cost: 900 },   // Level 3
-                    { rate: 0.0030, cost: 1750 },  // Level 4
-                    { rate: 0.0040, cost: 3000 },  // Level 5
-                    { rate: 0.0055, cost: 5000 },  // Level 6
-                    { rate: 0.0070, cost: 8000 },  // Level 7
-                    { rate: 0.0090, cost: 12000 }, // Level 8
-                    { rate: 0.0110, cost: 18000 }, // Level 9
-                    { rate: 0.0150, cost: 25000 }  // Level 10
-                ]
+                tap: [ { limit: 100, cost: 0 }, { limit: 200, cost: 50 }, { limit: 350, cost: 120 }, { limit: 500, cost: 250 }, { limit: 750, cost: 500 }, { limit: 1000, cost: 900 }, { limit: 1500, cost: 1600 }, { limit: 2000, cost: 2500 }, { limit: 3000, cost: 4000 }, { limit: 5000, cost: 7000 }, { limit: 7500, cost: 12000}, { limit: 10000, cost: 20000} ],
+                profit: [ { rate: 0.0007, cost: 0 }, { rate: 0.0010, cost: 200 }, { rate: 0.0015, cost: 450 }, { rate: 0.0022, cost: 900 }, { rate: 0.0030, cost: 1750 }, { rate: 0.0040, cost: 3000 }, { rate: 0.0055, cost: 5000 }, { rate: 0.0070, cost: 8000 }, { rate: 0.0090, cost: 12000 }, { rate: 0.0110, cost: 18000 }, { rate: 0.0150, cost: 25000 } ]
             };
             
-            const MYSTERY_BOX_PRIZES = [1, 1, 1, 1, 1, 5, 5, 5, 6, 6, 7, 10, 20, 30]; // Weighted array
+            const MYSTERY_BOX_PRIZES = [1, 1, 1, 1, 1, 5, 5, 5, 6, 6, 7, 10, 20, 30];
 
             function updateCoinDisplay() { const formattedCoins = (state.coins || 0).toFixed(4); dom.coinDisplay.textContent = formattedCoins; dom.walletBalanceDisplay.textContent = `${formattedCoins} Coins`; }
             function saveData() { if (state.user) safeSetLS(`proSpinAppState_${state.user.email}`, JSON.stringify(state)); }
@@ -537,20 +512,18 @@
                 const savedStateJSON = safeGetLS(`proSpinAppState_${user.email}`);
                 const defaultState = {
                     user, coins: 0, lastSpin: null, streakDay: 1, lastClaimDate: null, selectedCurrency: 'NPR',
-                    lastMysteryBoxClaim: null,
-                    transactionHistory: [],
-                    quizzesPlayedToday: 0, lastQuizPlayDate: null, questionsAskedToday: [], lastTTTPlayTime: null,
+                    lastMysteryBoxClaim: null, transactionHistory: [], quizzesPlayedToday: 0, lastQuizPlayDate: null, questionsAskedToday: [], lastTTTPlayTime: null,
                     flagQuiz: { playsToday: 0, lastPlayDate: null, questionsAskedToday: [] },
                     achievements: { 'streak3': false, 'streak7': false, 'quizMaster': false, 'referrer1': false, 'referrer5': false },
-                    mining: { 
-                        tappedBalance: 0, lastPassiveClaim: Date.now(),
-                        tapsMade: 0, lastTapReset: today(), cooldownUntil: null,
-                        tapLevel: 0, profitLevel: 0,
-                        tapBonus: 0, profitBonus: 0, comboPackPurchased: false
-                    },
+                    mining: { tappedBalance: 0, lastPassiveClaim: Date.now(), tapsMade: 0, lastTapReset: today(), cooldownUntil: null, tapLevel: 0, profitLevel: 0, tapBonus: 0, profitBonus: 0, comboPackPurchased: false },
                     correctlyAnsweredQuestions: [], totalReferrals: 0
                 };
                 state = savedStateJSON ? { ...defaultState, ...JSON.parse(savedStateJSON), user } : { ...defaultState, coins: startingCoins };
+
+                state.coins = Number(state.coins) || 0;
+                state.mining.tappedBalance = Number(state.mining.tappedBalance) || 0;
+                state.mining.tapLevel = Number(state.mining.tapLevel) || 0;
+                state.mining.profitLevel = Number(state.mining.profitLevel) || 0;
                 
                 state.achievements = { ...defaultState.achievements, ...(state.achievements || {}) };
                 state.flagQuiz = { ...defaultState.flagQuiz, ...(state.flagQuiz || {}) };
@@ -575,7 +548,7 @@
                 updateCoinDisplay(); saveData();
             }
             
-             function checkAndAutoApproveWithdrawals() {
+            function checkAndAutoApproveWithdrawals() {
                 const twelveHours = 12 * 60 * 60 * 1000;
                 for (let i = 0; i < localStorage.length; i++) {
                     const key = localStorage.key(i);
@@ -634,7 +607,7 @@
                     const email = safeGetLS('proSpinCurrentUser');
                     if (email) {
                         const user = this.usersDB.find(u => u.email === email);
-                        if(user) { loadData(user); initializeApp(); } else { this.logout(); }
+                        if(user && !user.isBanned) { loadData(user); initializeApp(); } else { this.logout(); }
                     } else { dom.authScreen.style.display = 'flex'; dom.appContainer.style.display = 'none'; renderAuthForms(); }
                 },
                 signup(fname, lname, email, password, refCode) {
@@ -685,17 +658,34 @@
                 dom.header.style.display = 'flex';
                 dom.nav.style.display = 'flex';
 
-                if (JSON.parse(safeGetLS('proSpinNewsFeed') || '[]').length === 0) {
-                    const defaultPost = {
+                // --- MODIFICATION: ADDED NEW NEWS POST ---
+                let newsFeed = JSON.parse(safeGetLS('proSpinNewsFeed') || '[]');
+                if (!newsFeed.some(post => post.id === 1)) {
+                    newsFeed.unshift({
                         id: 1,
                         title: "Welcome to Pro Spin App!",
                         caption: "Welcome! Explore our features: Spin the wheel daily for prizes, test your knowledge with quizzes, play mini-games, earn by mining, refer friends for bonuses, and withdraw your earnings directly to your wallet. Enjoy your time and happy earning!",
                         image: "https://i.ibb.co/4wx02y6c/unnamed-4.png"
-                    };
-                    safeSetLS('proSpinNewsFeed', JSON.stringify([defaultPost]));
+                    });
                 }
+                if (!newsFeed.some(post => post.id === 2)) {
+                    newsFeed.push({
+                        id: 2,
+                        title: "Important Account Update!",
+                        caption: "We are working on major server upgrades to improve your experience! Soon, you will be able to access your account from multiple devices. Thank you for your patience and happy earning!",
+                        image: "https://i.ibb.co/gb4kGrLb/image-search-1756914657019.jpg"
+                    });
+                }
+                safeSetLS('proSpinNewsFeed', JSON.stringify(newsFeed));
+                // --- END MODIFICATION ---
                 
                 checkAndAutoApproveWithdrawals();
+                const now = Date.now();
+                const profitRate = MINING_UPGRADES.profit[state.mining.profitLevel].rate + (state.mining.profitBonus || 0);
+                const passiveTimeDiff = (now - (state.mining.lastPassiveClaim || now)) / 1000 / 3600;
+                const passiveProfit = passiveTimeDiff * profitRate;
+                if(passiveProfit > 0) addCoins(passiveProfit);
+                state.mining.lastPassiveClaim = now;
 
                 dom.userGreeting.textContent = `Welcome, ${state.user.firstName}!`;
                 const referralCode = state.user.firstName.toUpperCase() + '123';
@@ -713,14 +703,20 @@
                 showScreen('home');
             }
 
-            window.showAdminLogin = function() {
+            function showAdminLogin() {
                 if (isAdminLoggedIn) { dom.header.style.display = 'none'; dom.nav.style.display = 'none'; showScreen('admin'); return; }
                 const code = prompt("Enter admin code:");
                 if (code === "GEDOLADOCANDO") { isAdminLoggedIn = true; dom.header.style.display = 'none'; dom.nav.style.display = 'none'; renderAdminPanel(); showScreen('admin'); } else if (code) { alert("Incorrect code."); }
             };
-            function adminLogout() { isAdminLoggedIn = false; dom.adminScreen.classList.remove('active'); dom.header.style.display = 'flex'; dom.nav.style.display = 'flex'; auth.check(); }
+            function adminLogout() {
+                isAdminLoggedIn = false;
+                dom.header.style.display = 'flex';
+                dom.nav.style.display = 'flex';
+                showScreen('home');
+            }
             
             function renderAdminPanel() {
+                auth.usersDB = JSON.parse(safeGetLS('proSpinUsersDB') || '[]');
                 dom.adminRequestList.innerHTML = '';
                 dom.adminUserList.innerHTML = '';
                 let hasPendingWithdrawals = false;
@@ -794,8 +790,7 @@
                     auth.saveUsersDB(); alert(`User ${user.firstName} has been ${user.isBanned ? 'banned' : 'unbanned'}.`); renderAdminPanel();
                 }
             }
-
-            // --- USER APP DATA & FUNCTIONS ---
+            
             const WHEEL_PRIZES = [10, 1, 3, 1, 2, 1, 5, 0.50, 2, 1];
             const QUIZ_QUESTIONS = [ { q: "Capital of France?", o: ["Berlin", "Madrid", "Paris", "Rome"], a: 2 }, { q: "Which planet is known as the Red Planet?", o: ["Earth", "Mars", "Jupiter", "Venus"], a: 1 }, { q: "What is the largest mammal?", o: ["Elephant", "Blue Whale", "Giraffe", "Shark"], a: 1 }, { q: "Who wrote 'Romeo and Juliet'?", o: ["Dickens", "Shakespeare", "Austen", "Twain"], a: 1 }, { q: "What is the chemical symbol for water?", o: ["O2", "CO2", "H2O", "NaCl"], a: 2 }, { q: "Which country is home to the kangaroo?", o: ["S. Africa", "India", "Australia", "Brazil"], a: 2 }, { q: "What is the tallest mountain in the world?", o: ["K2", "Everest", "Lhotse", "Makalu"], a: 1 }, { q: "Who painted the Mona Lisa?", o: ["Van Gogh", "Picasso", "Da Vinci", "Monet"], a: 2 }, { q: "What is the currency of Japan?", o: ["Yuan", "Won", "Yen", "Baht"], a: 2 }, { q: "What is the capital of Nepal?", o: ["Pokhara", "Lalitpur", "Kathmandu", "Bhaktapur"], a: 2 }, { q: "What is the powerhouse of the cell?", o: ["Nucleus", "Ribosome", "Mitochondrion"], a: 2 }, { q: "How many continents are there?", o: ["5", "6", "7", "8"], a: 2 }, { q: "Who invented the telephone?", o: ["T. Edison", "A. Einstein", "A. G. Bell"], a: 2 }, { q: "What is the hardest natural substance on Earth?", o: ["Gold", "Iron", "Diamond", "Platinum"], a: 2 }, { q: "Which is the largest ocean on Earth?", o: ["Atlantic", "Indian", "Arctic", "Pacific"], a: 3 }];
             const FLAG_QUIZ_QUESTIONS = [ { id: 0, code: 'us', options: ["UK", "USA", "Australia", "Liberia"], answer: 1 }, { id: 1, code: 'ca', options: ["Canada", "Peru", "Austria", "Malta"], answer: 0 }, { id: 2, code: 'in', options: ["Ireland", "Pakistan", "India", "Niger"], answer: 2 }, { id: 3, code: 'np', options: ["Bhutan", "Bangladesh", "Myanmar", "Nepal"], answer: 3 }, { id: 4, code: 'br', options: ["Brazil", "Portugal", "Mexico", "Argentina"], answer: 0 }];
@@ -1029,7 +1024,6 @@
             function renderMiningUpgrades() {
                 dom.miningBoostsContainer.innerHTML = '';
 
-                // Combo Pack Card
                 if (!state.mining.comboPackPurchased) {
                     const comboCard = document.createElement('div');
                     comboCard.className = 'boost-card';
@@ -1045,7 +1039,6 @@
                     btn.addEventListener('click', buyComboPack);
                 }
                 
-                // Tap Limit Upgrade Card
                 const currentTapLevel = state.mining.tapLevel;
                 const tapCard = document.createElement('div');
                 tapCard.className = 'boost-card';
@@ -1065,7 +1058,6 @@
                     dom.miningBoostsContainer.appendChild(tapCard);
                 }
 
-                // Profit Per Hour Upgrade Card
                 const currentProfitLevel = state.mining.profitLevel;
                 const profitCard = document.createElement('div');
                 profitCard.className = 'boost-card';
@@ -1144,7 +1136,8 @@
                     li.innerHTML = `<div class="transaction-details"><span class="holder-name">${tx.holderName}</span><span>${tx.walletNumber || tx.currency}</span><span><strong>${amountPrefix}${tx.amount} Coins</strong></span></div><span class="transaction-status ${tx.status.toLowerCase()}">${tx.status}</span>`;
                     dom.transactionHistoryList.appendChild(li);
                 });
-            }function handleWithdraw() {
+            }
+            function handleWithdraw() {
                 const holderName = dom.walletNameInput.value.trim(); const walletNumber = dom.walletNumberInput.value.trim(); const amount = parseFloat(dom.withdrawAmountInput.value);
                 if (!holderName || !walletNumber || !amount) { return showModal('Incomplete Details', 'Please fill in all withdrawal fields.'); }
                 if (isNaN(amount) || amount < 1000) { return showModal('Invalid Amount', `Minimum withdrawal is 1000 coins.`); }
@@ -1157,7 +1150,6 @@
                 renderTransactionHistory(); saveData();
             }
 
-            // --- EVENT LISTENERS ---
             dom.navButtons.forEach(b => b.addEventListener('click', () => showScreen(b.dataset.target)));
             dom.goToSpinBtn.addEventListener('click', () => showScreen('spin'));
             dom.currencyBtns.forEach(btn => btn.addEventListener('click', () => { state.selectedCurrency = btn.dataset.currency; updateWalletUI(); }));
@@ -1168,6 +1160,7 @@
             dom.adminLogoutBtn.addEventListener('click', adminLogout);
             dom.tapCoin.addEventListener('click', handleMineTap);
             dom.tapCoin.addEventListener('touchstart', handleMineTap, {passive: true});
+            dom.adminIcon.addEventListener('click', showAdminLogin);
             
             auth.check();
         });
