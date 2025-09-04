@@ -260,7 +260,7 @@
         <header>
             <div class="header-title">
                 <h1>Pro Spin App</h1>
-                <div class="admin-icon">👤</div>
+                <div class="admin-icon" onclick="showAdminLogin()">👤</div>
             </div>
             <div class="header-info">
                 <div id="user-greeting"></div>
@@ -354,8 +354,13 @@
                          <div class="mining-balance-display" id="tapped-balance-display">0.0000</div>
                          <div class="mining-stats">
                             <div class="stat-box">
-                                <span>Profit Per Hour</span>
+                                <span>Profit Per Hour 💰</span>
                                 <strong id="profit-per-hour">0.0000</strong>
+                                <div style="margin-top: 10px;">
+                                    <span>Accumulated</span>
+                                    <strong id="accumulated-profit" style="color: var(--secondary-color); display: block; font-size: 1.3em;">0.0000</strong>
+                                </div>
+                                <button id="claim-passive-profit-btn" class="button boost-button" style="padding: 6px 12px; font-size: 0.9em; margin-top: 10px; width: 100%;" disabled>Claim</button>
                             </div>
                         </div>
                     </div>
@@ -458,6 +463,7 @@
             const safeRemoveLS = (key) => { try { localStorage.removeItem(key); } catch (e) { console.error("LS Remove Error:", e); } };
             let isAdminLoggedIn = false;
             let miningCooldownInterval = null;
+            let passiveProfitInterval = null;
 
             const dom = {
                 appContainer: document.getElementById('app-container'), authScreen: document.getElementById('auth-screen'),
@@ -479,11 +485,12 @@
                 newsFeedList: document.getElementById('news-feed-list'),
                 adminScreen: document.getElementById('admin'), adminLogoutBtn: document.getElementById('admin-logout-btn'),
                 adminRequestList: document.getElementById('admin-request-list'), adminUserList: document.getElementById('admin-user-list'),
-                adminIcon: document.querySelector('.admin-icon'),
                 miningScreenContainer: document.getElementById('mining-screen-container'), tapCoin: document.getElementById('tap-coin'), tappedBalanceDisplay: document.getElementById('tapped-balance-display'),
                 profitPerHourDisplay: document.getElementById('profit-per-hour'),
                 miningLimitInfo: document.getElementById('mining-limit-info'), miningCooldownTimer: document.getElementById('mining-cooldown-timer'), miningTapsLeft: document.getElementById('mining-taps-left'),
                 miningBoostsContainer: document.getElementById('mining-boosts-container'),
+                accumulatedProfit: document.getElementById('accumulated-profit'),
+                claimPassiveProfitBtn: document.getElementById('claim-passive-profit-btn'),
             };
 
             const getDateString = d => d.toISOString().split('T')[0];
@@ -498,12 +505,38 @@
             
             let state = {};
 
+            // --- MINING GAME UPGRADES CONFIGURATION ---
             const MINING_UPGRADES = {
-                tap: [ { limit: 100, cost: 0 }, { limit: 200, cost: 50 }, { limit: 350, cost: 120 }, { limit: 500, cost: 250 }, { limit: 750, cost: 500 }, { limit: 1000, cost: 900 }, { limit: 1500, cost: 1600 }, { limit: 2000, cost: 2500 }, { limit: 3000, cost: 4000 }, { limit: 5000, cost: 7000 }, { limit: 7500, cost: 12000}, { limit: 10000, cost: 20000} ],
-                profit: [ { rate: 0.0007, cost: 0 }, { rate: 0.0010, cost: 200 }, { rate: 0.0015, cost: 450 }, { rate: 0.0022, cost: 900 }, { rate: 0.0030, cost: 1750 }, { rate: 0.0040, cost: 3000 }, { rate: 0.0055, cost: 5000 }, { rate: 0.0070, cost: 8000 }, { rate: 0.0090, cost: 12000 }, { rate: 0.0110, cost: 18000 }, { rate: 0.0150, cost: 25000 } ]
+                tap: [
+                    { limit: 100, cost: 0 },    // Level 0 (Base)
+                    { limit: 200, cost: 50 },   // Level 1
+                    { limit: 350, cost: 120 },  // Level 2
+                    { limit: 500, cost: 250 },  // Level 3
+                    { limit: 750, cost: 500 },  // Level 4
+                    { limit: 1000, cost: 900 }, // Level 5
+                    { limit: 1500, cost: 1600 },// Level 6
+                    { limit: 2000, cost: 2500 },// Level 7
+                    { limit: 3000, cost: 4000 },// Level 8
+                    { limit: 5000, cost: 7000 },// Level 9
+                    { limit: 7500, cost: 12000},// Level 10
+                    { limit: 10000, cost: 20000}// Level 11
+                ],
+                profit: [
+                    { rate: 0.0007, cost: 0 },    // Level 0
+                    { rate: 0.0010, cost: 200 },   // Level 1
+                    { rate: 0.0015, cost: 450 },   // Level 2
+                    { rate: 0.0022, cost: 900 },   // Level 3
+                    { rate: 0.0030, cost: 1750 },  // Level 4
+                    { rate: 0.0040, cost: 3000 },  // Level 5
+                    { rate: 0.0055, cost: 5000 },  // Level 6
+                    { rate: 0.0070, cost: 8000 },  // Level 7
+                    { rate: 0.0090, cost: 12000 }, // Level 8
+                    { rate: 0.0110, cost: 18000 }, // Level 9
+                    { rate: 0.0150, cost: 25000 }  // Level 10
+                ]
             };
             
-            const MYSTERY_BOX_PRIZES = [1, 1, 1, 1, 1, 5, 5, 5, 6, 6, 7, 10, 20, 30];
+            const MYSTERY_BOX_PRIZES = [1, 1, 1, 1, 1, 5, 5, 5, 6, 6, 7, 10, 20, 30]; // Weighted array
 
             function updateCoinDisplay() { const formattedCoins = (state.coins || 0).toFixed(4); dom.coinDisplay.textContent = formattedCoins; dom.walletBalanceDisplay.textContent = `${formattedCoins} Coins`; }
             function saveData() { if (state.user) safeSetLS(`proSpinAppState_${state.user.email}`, JSON.stringify(state)); }
@@ -512,18 +545,20 @@
                 const savedStateJSON = safeGetLS(`proSpinAppState_${user.email}`);
                 const defaultState = {
                     user, coins: 0, lastSpin: null, streakDay: 1, lastClaimDate: null, selectedCurrency: 'NPR',
-                    lastMysteryBoxClaim: null, transactionHistory: [], quizzesPlayedToday: 0, lastQuizPlayDate: null, questionsAskedToday: [], lastTTTPlayTime: null,
+                    lastMysteryBoxClaim: null,
+                    transactionHistory: [],
+                    quizzesPlayedToday: 0, lastQuizPlayDate: null, questionsAskedToday: [], lastTTTPlayTime: null,
                     flagQuiz: { playsToday: 0, lastPlayDate: null, questionsAskedToday: [] },
-                    achievements: { 'streak3': false, 'streak7': false, 'quizMaster': false, 'referrer1': false, 'referrer5': false },
-                    mining: { tappedBalance: 0, lastPassiveClaim: Date.now(), tapsMade: 0, lastTapReset: today(), cooldownUntil: null, tapLevel: 0, profitLevel: 0, tapBonus: 0, profitBonus: 0, comboPackPurchased: false },
-                    correctlyAnsweredQuestions: [], totalReferrals: 0
+                    achievements: { 'streak3': false, 'streak7': false, 'quizMaster': false, 'referrer1': false, 'referrer5': false, 'minerPro': false, 'gameChampion': false, 'topEarner': false },
+                    mining: { 
+                        tappedBalance: 0, lastPassiveClaim: Date.now(),
+                        tapsMade: 0, lastTapReset: today(), cooldownUntil: null,
+                        tapLevel: 0, profitLevel: 0,
+                        tapBonus: 0, profitBonus: 0, comboPackPurchased: false
+                    },
+                    correctlyAnsweredQuestions: [], totalReferrals: 0, totalMined: 0, tttWins: 0
                 };
                 state = savedStateJSON ? { ...defaultState, ...JSON.parse(savedStateJSON), user } : { ...defaultState, coins: startingCoins };
-
-                state.coins = Number(state.coins) || 0;
-                state.mining.tappedBalance = Number(state.mining.tappedBalance) || 0;
-                state.mining.tapLevel = Number(state.mining.tapLevel) || 0;
-                state.mining.profitLevel = Number(state.mining.profitLevel) || 0;
                 
                 state.achievements = { ...defaultState.achievements, ...(state.achievements || {}) };
                 state.flagQuiz = { ...defaultState.flagQuiz, ...(state.flagQuiz || {}) };
@@ -548,7 +583,7 @@
                 updateCoinDisplay(); saveData();
             }
             
-            function checkAndAutoApproveWithdrawals() {
+             function checkAndAutoApproveWithdrawals() {
                 const twelveHours = 12 * 60 * 60 * 1000;
                 for (let i = 0; i < localStorage.length; i++) {
                     const key = localStorage.key(i);
@@ -576,6 +611,7 @@
 
             function showScreen(targetId) {
                 if (miningCooldownInterval) { clearInterval(miningCooldownInterval); miningCooldownInterval = null; }
+                if (passiveProfitInterval) { clearInterval(passiveProfitInterval); passiveProfitInterval = null; }
 
                 document.querySelectorAll('#app-container main .screen').forEach(s => s.classList.remove('active'));
                 const targetScreen = document.getElementById(targetId); if (targetScreen) targetScreen.classList.add('active');
@@ -607,7 +643,7 @@
                     const email = safeGetLS('proSpinCurrentUser');
                     if (email) {
                         const user = this.usersDB.find(u => u.email === email);
-                        if(user && !user.isBanned) { loadData(user); initializeApp(); } else { this.logout(); }
+                        if(user) { loadData(user); initializeApp(); } else { this.logout(); }
                     } else { dom.authScreen.style.display = 'flex'; dom.appContainer.style.display = 'none'; renderAuthForms(); }
                 },
                 signup(fname, lname, email, password, refCode) {
@@ -657,35 +693,8 @@
                 dom.appContainer.style.display = 'flex';
                 dom.header.style.display = 'flex';
                 dom.nav.style.display = 'flex';
-
-                // --- MODIFICATION: ADDED NEW NEWS POST ---
-                let newsFeed = JSON.parse(safeGetLS('proSpinNewsFeed') || '[]');
-                if (!newsFeed.some(post => post.id === 1)) {
-                    newsFeed.unshift({
-                        id: 1,
-                        title: "Welcome to Pro Spin App!",
-                        caption: "Welcome! Explore our features: Spin the wheel daily for prizes, test your knowledge with quizzes, play mini-games, earn by mining, refer friends for bonuses, and withdraw your earnings directly to your wallet. Enjoy your time and happy earning!",
-                        image: "https://i.ibb.co/4wx02y6c/unnamed-4.png"
-                    });
-                }
-                if (!newsFeed.some(post => post.id === 2)) {
-                    newsFeed.push({
-                        id: 2,
-                        title: "Important Account Update!",
-                        caption: "We are working on major server upgrades to improve your experience! Soon, you will be able to access your account from multiple devices. Thank you for your patience and happy earning!",
-                        image: "https://i.ibb.co/gb4kGrLb/image-search-1756914657019.jpg"
-                    });
-                }
-                safeSetLS('proSpinNewsFeed', JSON.stringify(newsFeed));
-                // --- END MODIFICATION ---
                 
                 checkAndAutoApproveWithdrawals();
-                const now = Date.now();
-                const profitRate = MINING_UPGRADES.profit[state.mining.profitLevel].rate + (state.mining.profitBonus || 0);
-                const passiveTimeDiff = (now - (state.mining.lastPassiveClaim || now)) / 1000 / 3600;
-                const passiveProfit = passiveTimeDiff * profitRate;
-                if(passiveProfit > 0) addCoins(passiveProfit);
-                state.mining.lastPassiveClaim = now;
 
                 dom.userGreeting.textContent = `Welcome, ${state.user.firstName}!`;
                 const referralCode = state.user.firstName.toUpperCase() + '123';
@@ -703,20 +712,14 @@
                 showScreen('home');
             }
 
-            function showAdminLogin() {
+            window.showAdminLogin = function() {
                 if (isAdminLoggedIn) { dom.header.style.display = 'none'; dom.nav.style.display = 'none'; showScreen('admin'); return; }
                 const code = prompt("Enter admin code:");
                 if (code === "GEDOLADOCANDO") { isAdminLoggedIn = true; dom.header.style.display = 'none'; dom.nav.style.display = 'none'; renderAdminPanel(); showScreen('admin'); } else if (code) { alert("Incorrect code."); }
             };
-            function adminLogout() {
-                isAdminLoggedIn = false;
-                dom.header.style.display = 'flex';
-                dom.nav.style.display = 'flex';
-                showScreen('home');
-            }
+            function adminLogout() { isAdminLoggedIn = false; dom.adminScreen.classList.remove('active'); dom.header.style.display = 'flex'; dom.nav.style.display = 'flex'; auth.check(); }
             
             function renderAdminPanel() {
-                auth.usersDB = JSON.parse(safeGetLS('proSpinUsersDB') || '[]');
                 dom.adminRequestList.innerHTML = '';
                 dom.adminUserList.innerHTML = '';
                 let hasPendingWithdrawals = false;
@@ -790,7 +793,8 @@
                     auth.saveUsersDB(); alert(`User ${user.firstName} has been ${user.isBanned ? 'banned' : 'unbanned'}.`); renderAdminPanel();
                 }
             }
-            
+
+            // --- USER APP DATA & FUNCTIONS ---
             const WHEEL_PRIZES = [10, 1, 3, 1, 2, 1, 5, 0.50, 2, 1];
             const QUIZ_QUESTIONS = [ { q: "Capital of France?", o: ["Berlin", "Madrid", "Paris", "Rome"], a: 2 }, { q: "Which planet is known as the Red Planet?", o: ["Earth", "Mars", "Jupiter", "Venus"], a: 1 }, { q: "What is the largest mammal?", o: ["Elephant", "Blue Whale", "Giraffe", "Shark"], a: 1 }, { q: "Who wrote 'Romeo and Juliet'?", o: ["Dickens", "Shakespeare", "Austen", "Twain"], a: 1 }, { q: "What is the chemical symbol for water?", o: ["O2", "CO2", "H2O", "NaCl"], a: 2 }, { q: "Which country is home to the kangaroo?", o: ["S. Africa", "India", "Australia", "Brazil"], a: 2 }, { q: "What is the tallest mountain in the world?", o: ["K2", "Everest", "Lhotse", "Makalu"], a: 1 }, { q: "Who painted the Mona Lisa?", o: ["Van Gogh", "Picasso", "Da Vinci", "Monet"], a: 2 }, { q: "What is the currency of Japan?", o: ["Yuan", "Won", "Yen", "Baht"], a: 2 }, { q: "What is the capital of Nepal?", o: ["Pokhara", "Lalitpur", "Kathmandu", "Bhaktapur"], a: 2 }, { q: "What is the powerhouse of the cell?", o: ["Nucleus", "Ribosome", "Mitochondrion"], a: 2 }, { q: "How many continents are there?", o: ["5", "6", "7", "8"], a: 2 }, { q: "Who invented the telephone?", o: ["T. Edison", "A. Einstein", "A. G. Bell"], a: 2 }, { q: "What is the hardest natural substance on Earth?", o: ["Gold", "Iron", "Diamond", "Platinum"], a: 2 }, { q: "Which is the largest ocean on Earth?", o: ["Atlantic", "Indian", "Arctic", "Pacific"], a: 3 }];
             const FLAG_QUIZ_QUESTIONS = [ { id: 0, code: 'us', options: ["UK", "USA", "Australia", "Liberia"], answer: 1 }, { id: 1, code: 'ca', options: ["Canada", "Peru", "Austria", "Malta"], answer: 0 }, { id: 2, code: 'in', options: ["Ireland", "Pakistan", "India", "Niger"], answer: 2 }, { id: 3, code: 'np', options: ["Bhutan", "Bangladesh", "Myanmar", "Nepal"], answer: 3 }, { id: 4, code: 'br', options: ["Brazil", "Portugal", "Mexico", "Argentina"], answer: 0 }];
@@ -799,7 +803,10 @@
                 'streak7': { title: "7-Day Streak", reward: 25, svg: '<path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7v-5z"/>' }, 
                 'quizMaster': { title: "Quiz Master", reward: 15, svg: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>' }, 
                 'referrer1': { title: "1 Friend Referred", reward: 8, svg: '<path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>' }, 
-                'referrer5': { title: "5 Friends Referred", reward: 25, svg: '<path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>' } 
+                'referrer5': { title: "5 Friends Referred", reward: 25, svg: '<path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>' },
+                'minerPro': { title: "Miner Pro", reward: 50, svg: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2.5-11.5L12 11l2.5-2.5L12 6l-2.5 2.5zM6 12l2.5 2.5L11 12l-2.5-2.5L6 12zm8.5 2.5L12 17l-2.5-2.5L12 12l2.5 2.5z"/>' },
+                'gameChampion': { title: "Game Champion", reward: 30, svg: '<path d="M12 2l-5.5 9h11L12 2zm0 15l-5.5-9h11L12 17z"/>' },
+                'topEarner': { title: "Top Earner", reward: 100, svg: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>' }
             };
             
             function checkReferralAchievements(targetState) {
@@ -811,6 +818,9 @@
             function checkAchievements() { 
                 if (state.streakDay >= 4 && !state.achievements.streak3) { state.achievements.streak3 = true; addCoins(ALL_ACHIEVEMENTS.streak3.reward, true); showModal('Unlocked!', `3-Day Streak badge & ${ALL_ACHIEVEMENTS.streak3.reward} coins!`); renderAchievements(); } 
                 if (state.correctlyAnsweredQuestions.length >= QUIZ_QUESTIONS.length && !state.achievements.quizMaster) { state.achievements.quizMaster = true; addCoins(ALL_ACHIEVEMENTS.quizMaster.reward, true); showModal('Unlocked!', `Quiz Master badge & ${ALL_ACHIEVEMENTS.quizMaster.reward} coins!`); renderAchievements(); }
+                if (state.totalMined >= 50 && !state.achievements.minerPro) { state.achievements.minerPro = true; addCoins(ALL_ACHIEVEMENTS.minerPro.reward, true); showModal('Unlocked!', `Miner Pro badge & ${ALL_ACHIEVEMENTS.minerPro.reward} coins!`); renderAchievements(); }
+                if (state.tttWins >= 10 && !state.achievements.gameChampion) { state.achievements.gameChampion = true; addCoins(ALL_ACHIEVEMENTS.gameChampion.reward, true); showModal('Unlocked!', `Game Champion badge & ${ALL_ACHIEVEMENTS.gameChampion.reward} coins!`); renderAchievements(); }
+                if (state.coins >= 5000 && !state.achievements.topEarner) { state.achievements.topEarner = true; addCoins(ALL_ACHIEVEMENTS.topEarner.reward, true); showModal('Unlocked!', `Top Earner badge & ${ALL_ACHIEVEMENTS.topEarner.reward} coins!`); renderAchievements(); }
             }
             function renderAchievements() { dom.achievementsContainer.innerHTML = ''; for (const key in ALL_ACHIEVEMENTS) { const a = ALL_ACHIEVEMENTS[key]; const unlocked = state.achievements[key]; const div = document.createElement('div'); div.className = `achievement-badge ${unlocked ? 'unlocked' : ''}`; div.innerHTML = `<div class="badge-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${unlocked ? 'var(--gold-color)' : 'currentColor'}">${a.svg}</svg></div><p>${a.title}</p>`; dom.achievementsContainer.appendChild(div); } }
             function renderReferredMembers() {
@@ -931,23 +941,45 @@
             function findBestMove() { for (let i = 0; i < 9; i++) if (tttState.board[i] === '') { tttState.board[i] = 'O'; if (checkTTTWinner('O')) { tttState.board[i] = ''; return i; } tttState.board[i] = ''; } for (let i = 0; i < 9; i++) if (tttState.board[i] === '') { tttState.board[i] = 'X'; if (checkTTTWinner('X')) { tttState.board[i] = ''; return i; } tttState.board[i] = ''; } if (tttState.board[4] === '') return 4; const corners = [0, 2, 6, 8].filter(i => tttState.board[i] === ''); if (corners.length > 0) return corners[0]; return tttState.board.findIndex(c => c === ''); }
             const checkTTTWinner = p => WIN_COMBOS.some(c => c.every(i => tttState.board[i] === p));
             function handleRoundOver(result) { tttState.isRoundOver = true; dom.tttGameBoard.style.pointerEvents = 'none'; let msg = ''; if (result === 'win') { tttState.pScore++; msg = `You won Round ${tttState.round}!`; } else if (result === 'lose') { tttState.aiScore++; msg = `AI won Round ${tttState.round}.`; } else { msg = `Round ${tttState.round} is a draw.`; } updateTTTScoreboard(); if (tttState.pScore >= 2) handleMatchOver('win'); else if (tttState.aiScore >= 2) handleMatchOver('lose'); else showModal('Round Over', msg, startNewTTTRound); }
-            function handleMatchOver(result) { let title, msg; if (result === 'win') { addCoins(5); title = 'Match Won!'; msg = `You won the match and earned 5 coins!`; } else { addCoins(-5); title = 'Match Lost!'; msg = `You lost the match. 5 coins have been deducted.`; } showModal(title, msg); state.lastTTTPlayTime = Date.now(); saveData(); updateTTTButtonState(); dom.startTTTBtn.style.display = 'block'; }
+            function handleMatchOver(result) { let title, msg; if (result === 'win') { addCoins(5); state.tttWins = (state.tttWins || 0) + 1; title = 'Match Won!'; msg = `You won the match and earned 5 coins!`; } else { addCoins(-5); title = 'Match Lost!'; msg = `You lost the match. 5 coins have been deducted.`; } showModal(title, msg); state.lastTTTPlayTime = Date.now(); saveData(); updateTTTButtonState(); dom.startTTTBtn.style.display = 'block'; checkAchievements(); }
             
             const TAP_COOLDOWN = 2 * 60 * 60 * 1000;
             
             function initializeMiningGame() {
-                const now = Date.now();
-                const profitRate = MINING_UPGRADES.profit[state.mining.profitLevel].rate + (state.mining.profitBonus || 0);
-                const passiveTimeDiff = (now - (state.mining.lastPassiveClaim || now)) / 1000 / 3600;
-                const passiveProfit = passiveTimeDiff * profitRate;
-                if(passiveProfit > 0) addCoins(passiveProfit);
-                state.mining.lastPassiveClaim = now;
-                
                 updateMiningUI();
                 renderMiningUpgrades();
+                const updateDisplay = () => updateAccumulatedProfit();
+                updateDisplay();
+                passiveProfitInterval = setInterval(updateDisplay, 1000);
                 saveData();
             }
             
+            function updateAccumulatedProfit() {
+                if (!state.mining || state.mining.lastPassiveClaim === undefined) return;
+                const profitRate = MINING_UPGRADES.profit[state.mining.profitLevel].rate + (state.mining.profitBonus || 0);
+                const timeDiffSeconds = (Date.now() - state.mining.lastPassiveClaim) / 1000;
+                const accumulated = (timeDiffSeconds / 3600) * profitRate;
+                dom.accumulatedProfit.textContent = accumulated.toFixed(6);
+                dom.claimPassiveProfitBtn.disabled = accumulated < 0.0001;
+            }
+
+            function claimPassiveProfit() {
+                const profitRate = MINING_UPGRADES.profit[state.mining.profitLevel].rate + (state.mining.profitBonus || 0);
+                const timeDiffSeconds = (Date.now() - state.mining.lastPassiveClaim) / 1000;
+                const accumulated = (timeDiffSeconds / 3600) * profitRate;
+
+                if (accumulated < 0.0001) {
+                    showModal('Too Soon!', 'Not enough profit has accumulated to claim yet.');
+                    return;
+                }
+                addCoins(accumulated);
+                state.mining.lastPassiveClaim = Date.now();
+                saveData();
+                showModal('Profit Claimed!', `You have successfully claimed ${accumulated.toFixed(6)} coins!`);
+                updateAccumulatedProfit();
+                updateMiningUI();
+            }
+
             function updateMiningUI() {
                 dom.tappedBalanceDisplay.textContent = state.coins.toFixed(4);
                 dom.profitPerHourDisplay.textContent = (MINING_UPGRADES.profit[state.mining.profitLevel].rate + (state.mining.profitBonus || 0)).toFixed(4);
@@ -1001,6 +1033,7 @@
                 
                 state.mining.tapsMade++;
                 addCoins(0.0001);
+                state.totalMined = (state.totalMined || 0) + 0.0001;
                 
                 if (state.mining.tapsMade >= currentTapLimit) {
                     state.mining.cooldownUntil = now + TAP_COOLDOWN;
@@ -1019,11 +1052,13 @@
 
                 updateMiningUI();
                 saveData();
+                checkAchievements();
             }
 
             function renderMiningUpgrades() {
                 dom.miningBoostsContainer.innerHTML = '';
 
+                // Combo Pack Card
                 if (!state.mining.comboPackPurchased) {
                     const comboCard = document.createElement('div');
                     comboCard.className = 'boost-card';
@@ -1039,6 +1074,7 @@
                     btn.addEventListener('click', buyComboPack);
                 }
                 
+                // Tap Limit Upgrade Card
                 const currentTapLevel = state.mining.tapLevel;
                 const tapCard = document.createElement('div');
                 tapCard.className = 'boost-card';
@@ -1058,6 +1094,7 @@
                     dom.miningBoostsContainer.appendChild(tapCard);
                 }
 
+                // Profit Per Hour Upgrade Card
                 const currentProfitLevel = state.mining.profitLevel;
                 const profitCard = document.createElement('div');
                 profitCard.className = 'boost-card';
@@ -1136,8 +1173,7 @@
                     li.innerHTML = `<div class="transaction-details"><span class="holder-name">${tx.holderName}</span><span>${tx.walletNumber || tx.currency}</span><span><strong>${amountPrefix}${tx.amount} Coins</strong></span></div><span class="transaction-status ${tx.status.toLowerCase()}">${tx.status}</span>`;
                     dom.transactionHistoryList.appendChild(li);
                 });
-            }
-            function handleWithdraw() {
+            }function handleWithdraw() {
                 const holderName = dom.walletNameInput.value.trim(); const walletNumber = dom.walletNumberInput.value.trim(); const amount = parseFloat(dom.withdrawAmountInput.value);
                 if (!holderName || !walletNumber || !amount) { return showModal('Incomplete Details', 'Please fill in all withdrawal fields.'); }
                 if (isNaN(amount) || amount < 1000) { return showModal('Invalid Amount', `Minimum withdrawal is 1000 coins.`); }
@@ -1150,6 +1186,7 @@
                 renderTransactionHistory(); saveData();
             }
 
+            // --- EVENT LISTENERS ---
             dom.navButtons.forEach(b => b.addEventListener('click', () => showScreen(b.dataset.target)));
             dom.goToSpinBtn.addEventListener('click', () => showScreen('spin'));
             dom.currencyBtns.forEach(btn => btn.addEventListener('click', () => { state.selectedCurrency = btn.dataset.currency; updateWalletUI(); }));
@@ -1160,7 +1197,7 @@
             dom.adminLogoutBtn.addEventListener('click', adminLogout);
             dom.tapCoin.addEventListener('click', handleMineTap);
             dom.tapCoin.addEventListener('touchstart', handleMineTap, {passive: true});
-            dom.adminIcon.addEventListener('click', showAdminLogin);
+            dom.claimPassiveProfitBtn.addEventListener('click', claimPassiveProfit);
             
             auth.check();
         });
