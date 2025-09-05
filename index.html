@@ -141,7 +141,7 @@
         #mining-limit-info { font-family: 'Orbitron', sans-serif; margin-bottom: 10px; height: 40px; }
         #mining-cooldown-timer { font-size: 1.5em; font-weight: 700; color: var(--danger-color); }
         #mining-taps-left { font-size: 1.1em; }
-        .energy-bar-container, #mining-energy-display { display: none !important; } /* Hides the energy bar and text */
+        .energy-bar-container, #mining-energy-display { display: none !important; }
         
         .boosts-section { padding: 10px 20px 20px 20px; z-index: 2; overflow-y: auto; background: rgba(0,0,0,0.3); }
         .boosts-section h3 { font-family: 'Orbitron', sans-serif; color: var(--secondary-color); text-shadow: 0 0 8px var(--secondary-color); margin: 0 0 15px 0; font-size: 1.2em; }
@@ -196,10 +196,11 @@
         .transaction-status.approved, .transaction-status.completed { background-color: var(--success-color); color: white; }
 
         .news-post { background-color: var(--card-color); border: 1px solid var(--border-color); border-radius: var(--border-radius); margin-bottom: 20px; padding: 20px; text-align: left; }
-        .news-post-image { max-width: 100%; border-radius: 8px; margin-bottom: 15px; }
+        .news-post-media { max-width: 100%; border-radius: 8px; margin-bottom: 15px; }
         .news-post-title { font-size: 1.3em; font-weight: 700; color: var(--text-color); margin: 0 0 10px 0; }
         .news-post-caption { font-size: 1em; color: var(--light-text-color); line-height: 1.6; margin: 0; }
-
+        .news-post-meta { font-size: 0.8em; color: var(--light-text-color); margin-top: 15px; }
+        
         /* --- Mystery Box Styles --- */
         #mystery-box-container { position: relative; display: flex; justify-content: center; align-items: center; height: 220px; }
         @keyframes mystery-glow {
@@ -242,15 +243,18 @@
         #admin .admin-user-info strong { color: var(--admin-text-color); }
         #admin .admin-user-info span { color: var(--admin-light-text-color); display: block; font-size: 0.9em; }
         #admin .admin-user-item.banned-user .admin-user-info strong { color: var(--admin-danger-color); text-decoration: line-through; }
-        #admin .admin-news-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px !important; }
-        #admin .admin-news-item p { margin: 0; }
-        #admin .admin-user-actions { display: flex; gap: 5px; }
+        #admin .admin-content-item { display: flex; justify-content: space-between; align-items: center; background: #0d1117; padding: 12px 15px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--admin-border-color); font-size: 0.9em; }
+        #admin .admin-content-item p { margin: 0; flex-grow: 1; }
+        #admin .admin-user-actions, #admin .admin-content-actions { display: flex; gap: 5px; }
         #admin .approve-btn, #admin .send-coins-btn, #admin .delete-post-btn, #admin .ban-btn, #admin .unban-btn { border: none; padding: 8px 12px; font-size: 0.9em; border-radius: 6px; cursor: pointer; color: white; }
         #admin .approve-btn { background-color: var(--admin-success-color); }
         #admin .send-coins-btn { background-color: var(--admin-primary-color); }
         #admin .delete-post-btn { background-color: var(--admin-danger-color); }
         #admin .ban-btn { background-color: var(--admin-danger-color); }
         #admin .unban-btn { background-color: var(--admin-success-color); }
+        #admin .file-upload-label { display: block; padding: 10px; background-color: #333; text-align: center; border-radius: 8px; cursor: pointer; margin-top: 10px; }
+        #admin .file-upload-label:hover { background-color: #444; }
+        #admin .file-name-display { color: #8b949e; font-style: italic; font-size: 0.9em; margin-top: 5px; display: block; }
     </style>
 </head>
 <body>
@@ -340,15 +344,7 @@
                     </div>
                 </div>
             </div>
-            <div id="quiz" class="screen">
-                <h2>GK Quiz</h2>
-                <p>Answer correctly to earn <strong>0.50 coins</strong>. <span id="quiz-limit-text"></span></p>
-                <div class="card" id="quiz-card">
-                    <p id="question-text">Loading question...</p>
-                    <div id="answer-options"></div>
-                </div>
-            </div>
-             <div id="mining" class="screen">
+            <div id="mining" class="screen">
                  <div id="mining-screen-container">
                     <div class="mining-header">
                          <div class="mining-balance-display" id="tapped-balance-display">0.0000</div>
@@ -379,6 +375,14 @@
                         <h3>Boosts</h3>
                         <div id="mining-boosts-container"></div>
                     </div>
+                </div>
+            </div>
+            <div id="quiz" class="screen">
+                <h2>GK Quiz</h2>
+                <p>Answer correctly to earn <strong>0.50 coins</strong>. <span id="quiz-limit-text"></span></p>
+                <div class="card" id="quiz-card">
+                    <p id="question-text">Loading question...</p>
+                    <div id="answer-options"></div>
                 </div>
             </div>
             <div id="tictactoe" class="screen">
@@ -432,6 +436,20 @@
                     <h2>Admin Panel</h2>
                     <button id="admin-logout-btn" class="button danger" style="width: auto; padding: 8px 15px; margin: 0;">Logout</button>
                 </div>
+                 <div class="card">
+                    <h3>Create New Post</h3>
+                    <input type="text" id="admin-post-title" class="input-field" placeholder="Post Title">
+                    <textarea id="admin-post-caption" class="input-field" placeholder="Post Caption" rows="4"></textarea>
+                    <input type="file" id="admin-post-media" accept="image/*,video/*" class="hidden">
+                    <label for="admin-post-media" class="file-upload-label">Select Image or Video</label>
+                    <span id="admin-post-media-name" class="file-name-display">No file selected</span>
+                    <button id="admin-create-post-btn" class="button">Create Post</button>
+                </div>
+                <div class="card">
+                    <h3>Manage Posts</h3>
+                    <div id="admin-posts-list"></div>
+                </div>
+                <hr style="border-color: var(--admin-border-color); margin: 40px 0;">
                 <div class="card">
                     <h3>Pending Withdrawal Approvals</h3>
                     <div id="admin-request-list"></div>
@@ -456,14 +474,36 @@
     </div>
     <div id="modal"><div class="modal-content"><h3 id="modal-title"></h3><p id="modal-text"></p><button class="button" id="modal-close">OK</button></div></div>
     
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+
     <script>
+        // --- IMPORTANT: PASTE YOUR FIREBASE CONFIGURATION HERE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyA_ECQnV4pIUaCMmo8fDPSvceqOi54DAHk",
+            authDomain: "pro-earning-apps.firebaseapp.com",
+            databaseURL: "https://pro-earning-apps-default-rtdb.firebaseio.com",
+            projectId: "pro-earning-apps",
+            storageBucket: "pro-earning-apps.appspot.com",
+            messagingSenderId: "96262015986",
+            appId: "1:96262015986:web:47c0c4bcf3fc7a760eb96b",
+            measurementId: "G-6YHR0LCJWK"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+        const storage = firebase.storage();
+
         document.addEventListener('DOMContentLoaded', () => {
-            const safeGetLS = (key) => { try { return localStorage.getItem(key); } catch (e) { console.error("LS Read Error:", e); return null; } };
-            const safeSetLS = (key, value) => { try { localStorage.setItem(key, value); } catch (e) { console.error("LS Write Error:", e); } };
-            const safeRemoveLS = (key) => { try { localStorage.removeItem(key); } catch (e) { console.error("LS Remove Error:", e); } };
             let isAdminLoggedIn = false;
             let miningCooldownInterval = null;
             let passiveProfitInterval = null;
+            let userStateListener = null;
 
             const dom = {
                 appContainer: document.getElementById('app-container'), authScreen: document.getElementById('auth-screen'),
@@ -485,6 +525,7 @@
                 newsFeedList: document.getElementById('news-feed-list'),
                 adminScreen: document.getElementById('admin'), adminLogoutBtn: document.getElementById('admin-logout-btn'),
                 adminRequestList: document.getElementById('admin-request-list'), adminUserList: document.getElementById('admin-user-list'),
+                adminPostTitle: document.getElementById('admin-post-title'), adminPostCaption: document.getElementById('admin-post-caption'), adminPostMedia: document.getElementById('admin-post-media'), adminPostMediaName: document.getElementById('admin-post-media-name'), adminCreatePostBtn: document.getElementById('admin-create-post-btn'), adminPostsList: document.getElementById('admin-posts-list'),
                 miningScreenContainer: document.getElementById('mining-screen-container'), tapCoin: document.getElementById('tap-coin'), tappedBalanceDisplay: document.getElementById('tapped-balance-display'),
                 profitPerHourDisplay: document.getElementById('profit-per-hour'),
                 miningLimitInfo: document.getElementById('mining-limit-info'), miningCooldownTimer: document.getElementById('mining-cooldown-timer'), miningTapsLeft: document.getElementById('mining-taps-left'),
@@ -504,49 +545,49 @@
             };
             
             let state = {};
+            let isSaving = false;
 
-            // --- MINING GAME UPGRADES CONFIGURATION ---
             const MINING_UPGRADES = {
-                tap: [
-                    { limit: 100, cost: 0 },    // Level 0 (Base)
-                    { limit: 200, cost: 50 },   // Level 1
-                    { limit: 350, cost: 120 },  // Level 2
-                    { limit: 500, cost: 250 },  // Level 3
-                    { limit: 750, cost: 500 },  // Level 4
-                    { limit: 1000, cost: 900 }, // Level 5
-                    { limit: 1500, cost: 1600 },// Level 6
-                    { limit: 2000, cost: 2500 },// Level 7
-                    { limit: 3000, cost: 4000 },// Level 8
-                    { limit: 5000, cost: 7000 },// Level 9
-                    { limit: 7500, cost: 12000},// Level 10
-                    { limit: 10000, cost: 20000}// Level 11
-                ],
-                profit: [
-                    { rate: 0.0007, cost: 0 },    // Level 0
-                    { rate: 0.0010, cost: 200 },   // Level 1
-                    { rate: 0.0015, cost: 450 },   // Level 2
-                    { rate: 0.0022, cost: 900 },   // Level 3
-                    { rate: 0.0030, cost: 1750 },  // Level 4
-                    { rate: 0.0040, cost: 3000 },  // Level 5
-                    { rate: 0.0055, cost: 5000 },  // Level 6
-                    { rate: 0.0070, cost: 8000 },  // Level 7
-                    { rate: 0.0090, cost: 12000 }, // Level 8
-                    { rate: 0.0110, cost: 18000 }, // Level 9
-                    { rate: 0.0150, cost: 25000 }  // Level 10
-                ]
+                tap: [ { limit: 100, cost: 0 }, { limit: 200, cost: 50 }, { limit: 350, cost: 120 }, { limit: 500, cost: 250 }, { limit: 750, cost: 500 }, { limit: 1000, cost: 900 }, { limit: 1500, cost: 1600 }, { limit: 2000, cost: 2500 }, { limit: 3000, cost: 4000 }, { limit: 5000, cost: 7000 }, { limit: 7500, cost: 12000}, { limit: 10000, cost: 20000} ],
+                profit: [ { rate: 0.0007, cost: 0 }, { rate: 0.0010, cost: 200 }, { rate: 0.0015, cost: 450 }, { rate: 0.0022, cost: 900 }, { rate: 0.0030, cost: 1750 }, { rate: 0.0040, cost: 3000 }, { rate: 0.0055, cost: 5000 }, { rate: 0.0070, cost: 8000 }, { rate: 0.0090, cost: 12000 }, { rate: 0.0110, cost: 18000 }, { rate: 0.0150, cost: 25000 } ]
             };
             
-            const MYSTERY_BOX_PRIZES = [1, 1, 1, 1, 1, 5, 5, 5, 6, 6, 7, 10, 20, 30]; // Weighted array
+            const MYSTERY_BOX_PRIZES = [1, 1, 1, 1, 1, 5, 5, 5, 6, 6, 7, 10, 20, 30];
 
-            function updateCoinDisplay() { const formattedCoins = (state.coins || 0).toFixed(4); dom.coinDisplay.textContent = formattedCoins; dom.walletBalanceDisplay.textContent = `${formattedCoins} Coins`; }
-            function saveData() { if (state.user) safeSetLS(`proSpinAppState_${state.user.email}`, JSON.stringify(state)); }
+            function updateCoinDisplay() { 
+                const formattedCoins = (state.coins || 0).toFixed(4); 
+                dom.coinDisplay.textContent = formattedCoins; 
+                dom.walletBalanceDisplay.textContent = `${formattedCoins} Coins`; 
+            }
             
-            function loadData(user, startingCoins = 0) {
-                const savedStateJSON = safeGetLS(`proSpinAppState_${user.email}`);
+            function saveData() {
+                if (isSaving || !state.user || !state.user.uid) return;
+                isSaving = true;
+                const stateToSave = { ...state };
+                delete stateToSave.user;
+                db.ref('userState/' + state.user.uid).set(stateToSave).then(() => {
+                    isSaving = false;
+                }).catch(error => {
+                    console.error("Firebase Save Error:", error);
+                    isSaving = false;
+                });
+            }
+            
+            async function loadData(user) {
+                const snapshot = await db.ref('userState/' + user.uid).once('value');
+                const savedState = snapshot.val();
+                
+                const displayName = user.displayName || '';
+                const nameParts = displayName.split(' ');
+                const firstName = nameParts[0] || 'User';
+                const lastName = nameParts.slice(1).join(' ') || '';
+                const referralCode = (firstName).toUpperCase() + '123';
+
                 const defaultState = {
-                    user, coins: 0, lastSpin: null, streakDay: 1, lastClaimDate: null, selectedCurrency: 'NPR',
-                    lastMysteryBoxClaim: null,
-                    transactionHistory: [],
+                    user,
+                    firstName, lastName, email: user.email, referralCode,
+                    coins: 0, lastSpin: null, streakDay: 1, lastClaimDate: null, selectedCurrency: 'NPR',
+                    lastMysteryBoxClaim: null, transactionHistory: [],
                     quizzesPlayedToday: 0, lastQuizPlayDate: null, questionsAskedToday: [], lastTTTPlayTime: null,
                     flagQuiz: { playsToday: 0, lastPlayDate: null, questionsAskedToday: [] },
                     achievements: { 'streak3': false, 'streak7': false, 'quizMaster': false, 'referrer1': false, 'referrer5': false, 'minerPro': false, 'gameChampion': false, 'topEarner': false },
@@ -556,57 +597,26 @@
                         tapLevel: 0, profitLevel: 0,
                         tapBonus: 0, profitBonus: 0, comboPackPurchased: false
                     },
-                    correctlyAnsweredQuestions: [], totalReferrals: 0, totalMined: 0, tttWins: 0
+                    correctlyAnsweredQuestions: [], totalReferrals: 0, totalMined: 0, tttWins: 0,
+                    isBanned: false, referredBy: null, device: getDeviceType()
                 };
-                state = savedStateJSON ? { ...defaultState, ...JSON.parse(savedStateJSON), user } : { ...defaultState, coins: startingCoins };
+
+                state = savedState ? { ...defaultState, ...savedState, user } : { ...defaultState };
                 
                 state.achievements = { ...defaultState.achievements, ...(state.achievements || {}) };
                 state.flagQuiz = { ...defaultState.flagQuiz, ...(state.flagQuiz || {}) };
                 state.mining = { ...defaultState.mining, ...(state.mining || {}) };
-                state.correctlyAnsweredQuestions = state.correctlyAnsweredQuestions || [];
+                state.transactionHistory = state.transactionHistory || [];
             }
             
             function addCoins(amount, isAchievementReward = false) {
-                 if (amount > 0 && state.user.referredBy && !isAchievementReward) {
-                    const referrer = auth.usersDB.find(u => u.email === state.user.referredBy);
-                    if (referrer && !referrer.isBanned) {
-                        const commission = amount * 0.10; const referrerStateKey = `proSpinAppState_${referrer.email}`;
-                        const referrerStateJSON = safeGetLS(referrerStateKey);
-                        if (referrerStateJSON) {
-                            const referrerState = JSON.parse(referrerStateJSON);
-                            referrerState.coins = (referrerState.coins || 0) + commission;
-                            safeSetLS(referrerStateKey, JSON.stringify(referrerState));
-                        }
-                    }
+                 if (amount > 0 && state.referredBy && !isAchievementReward) {
+                    const commission = amount * 0.10;
+                    db.ref('userState/' + state.referredBy + '/coins').transaction(currentCoins => (currentCoins || 0) + commission);
                 }
                 state.coins = Math.max(0, (state.coins || 0) + amount);
-                updateCoinDisplay(); saveData();
-            }
-            
-             function checkAndAutoApproveWithdrawals() {
-                const twelveHours = 12 * 60 * 60 * 1000;
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key.startsWith('proSpinAppState_')) {
-                        let userState;
-                        try { userState = JSON.parse(safeGetLS(key)); } 
-                        catch (e) { continue; }
-
-                        if (userState && userState.transactionHistory && userState.transactionHistory.length > 0) {
-                            let wasModified = false;
-                            userState.transactionHistory = userState.transactionHistory.map(tx => {
-                                if (tx.status === 'Pending' && tx.type === 'withdrawal' && tx.requestTimestamp) {
-                                    if ((Date.now() - tx.requestTimestamp) >= twelveHours) {
-                                        wasModified = true;
-                                        return { ...tx, status: 'Approved' };
-                                    }
-                                }
-                                return tx;
-                            });
-                            if (wasModified) { safeSetLS(key, JSON.stringify(userState)); }
-                        }
-                    }
-                }
+                updateCoinDisplay(); 
+                saveData();
             }
 
             function showScreen(targetId) {
@@ -621,12 +631,13 @@
                     if(activeBtn) activeBtn.classList.add('active');
                 }
                 if (targetId === 'home') { renderAchievements(); initializeFlagQuiz(); }
-                if (targetId === 'wallet') { checkAndAutoApproveWithdrawals(); renderTransactionHistory(); }
+                if (targetId === 'wallet') { renderTransactionHistory(); }
                 if (targetId === 'news') { renderNewsFeed(); }
                 if (targetId === 'quiz') { updateQuizUI(); }
                 if (targetId === 'tictactoe') { updateTTTButtonState(); }
                 if (targetId === 'mining') { initializeMiningGame(); }
                 if (targetId === 'task') { updateMysteryBoxUI(); }
+                if (targetId === 'refer') { renderReferredMembers(); }
             }
             
             function getDeviceType() {
@@ -636,47 +647,87 @@
                 return "Web/Desktop";
             }
 
-            const auth = {
-                usersDB: (() => JSON.parse(safeGetLS('proSpinUsersDB') || '[]'))(),
-                saveUsersDB() { safeSetLS('proSpinUsersDB', JSON.stringify(this.usersDB)); },
-                check() {
-                    const email = safeGetLS('proSpinCurrentUser');
-                    if (email) {
-                        const user = this.usersDB.find(u => u.email === email);
-                        if(user) { loadData(user); initializeApp(); } else { this.logout(); }
-                    } else { dom.authScreen.style.display = 'flex'; dom.appContainer.style.display = 'none'; renderAuthForms(); }
-                },
-                signup(fname, lname, email, password, refCode) {
-                    const err = document.getElementById('signup-error'); err.textContent = '';
-                    if (!fname.trim() || !lname.trim() || !email.trim() || !password.trim()) return err.textContent = 'All fields are required.';
-                    if (this.usersDB.some(u => u.email.toLowerCase() === email.toLowerCase())) return err.textContent = 'Email already exists.';
+            // --- AUTHENTICATION & REALTIME SYNC ---
+            auth.onAuthStateChanged(async (user) => {
+                if (userStateListener && state.user?.uid) {
+                    db.ref('userState/' + state.user.uid).off('value', userStateListener);
+                }
+
+                if (user) {
+                    await loadData(user);
+                    if (state.isBanned) {
+                        showModal("Account Suspended", "Your account has been suspended by the administrator.");
+                        auth.signOut();
+                        return;
+                    }
                     
-                    let refEmail = null;
-                    if (refCode && refCode.trim() !== '') {
-                        const normRef = refCode.trim().toUpperCase(); const referrer = this.usersDB.find(u => (u.firstName.toUpperCase() + '123') === normRef);
-                        if (referrer) {
-                            refEmail = referrer.email;
-                            const refStateKey = `proSpinAppState_${referrer.email}`; const refStateJSON = safeGetLS(refStateKey);
-                            if (refStateJSON) {
-                                const refState = JSON.parse(refStateJSON);
-                                refState.coins = (refState.coins || 0) + 20; refState.totalReferrals = (refState.totalReferrals || 0) + 1;
-                                checkReferralAchievements(refState); safeSetLS(refStateKey, JSON.stringify(refState));
+                    const userRef = db.ref('userState/' + user.uid);
+                    userStateListener = userRef.on('value', (snapshot) => {
+                        const serverState = snapshot.val();
+                        if (serverState) {
+                            state.coins = serverState.coins;
+                            state.transactionHistory = serverState.transactionHistory || [];
+                            updateCoinDisplay();
+                            if (document.getElementById('wallet').classList.contains('active')) {
+                                renderTransactionHistory();
                             }
                         }
-                    }
+                    });
 
-                    const newUser = { firstName: fname, lastName: lname, email: email.toLowerCase(), password, referredBy: refEmail, isBanned: false, device: getDeviceType() };
-                    this.usersDB.push(newUser); this.saveUsersDB(); this.login(email, password, 10);
-                },
-                login(email, password, coinsOnFirstLogin = 0) { 
-                    const err = document.getElementById('login-error'); err.textContent = '';
-                    const user = this.usersDB.find(u => u.email.toLowerCase() === email.toLowerCase());
-                    if (!user || user.password !== password) return err.textContent = 'Invalid credentials.';
-                    if (user.isBanned) return err.textContent = 'Your account has been suspended.';
-                    safeSetLS('proSpinCurrentUser', user.email); loadData(user, coinsOnFirstLogin); initializeApp();
-                },
-                logout() { safeRemoveLS('proSpinCurrentUser'); state = {}; dom.appContainer.style.display = 'none'; dom.authScreen.style.display = 'flex'; renderAuthForms(); }
-            };
+                    initializeApp();
+                } else {
+                    state = {};
+                    dom.authScreen.style.display = 'flex';
+                    dom.appContainer.style.display = 'none';
+                    renderAuthForms();
+                }
+            });
+
+            function handleSignup(fname, lname, email, password, refCode) {
+                const err = document.getElementById('signup-error');
+                err.textContent = '';
+                if (!fname.trim() || !lname.trim() || !email.trim() || !password.trim()) {
+                    return err.textContent = 'All fields are required.';
+                }
+
+                auth.createUserWithEmailAndPassword(email, password)
+                    .then(async (userCredential) => {
+                        const user = userCredential.user;
+                        await user.updateProfile({ displayName: `${fname} ${lname}` });
+
+                        const initialData = {
+                            firstName: fname, lastName: lname, email: email.toLowerCase(),
+                            referralCode: fname.toUpperCase() + '123',
+                            referredBy: null, isBanned: false, device: getDeviceType(), coins: 10
+                        };
+
+                        await db.ref('userState/' + user.uid).set(initialData);
+
+                        if (refCode && refCode.trim() !== '') {
+                            const normRef = refCode.trim().toUpperCase();
+                            const usersRef = db.ref('userState');
+                            usersRef.orderByChild('referralCode').equalTo(normRef).once('value', snapshot => {
+                                if (snapshot.exists()) {
+                                    const referrerUid = Object.keys(snapshot.val())[0];
+                                    const referrerData = snapshot.val()[referrerUid];
+                                    if (!referrerData.isBanned) {
+                                        db.ref(`userState/${user.uid}/referredBy`).set(referrerUid);
+                                        db.ref(`userState/${referrerUid}/coins`).transaction(coins => (coins || 0) + 20);
+                                        db.ref(`userState/${referrerUid}/totalReferrals`).transaction(count => (count || 0) + 1);
+                                    }
+                                }
+                            });
+                        }
+                    })
+                    .catch((error) => { err.textContent = error.message; });
+            }
+
+            function handleLogin(email, password) {
+                const err = document.getElementById('login-error');
+                err.textContent = '';
+                auth.signInWithEmailAndPassword(email, password)
+                    .catch((error) => { err.textContent = 'Invalid credentials.'; });
+            }
             
             function renderAuthForms(){
                 dom.authScreen.innerHTML = `
@@ -684,8 +735,8 @@
                     <div id="signup-view" class="auth-card hidden"><h2>Sign Up</h2><p class="auth-error" id="signup-error"></p><input type="text" id="signup-fname" class="input-field" placeholder="First Name"><input type="text" id="signup-lname" class="input-field" placeholder="Last Name"><input type="email" id="signup-email" class="input-field" placeholder="Email"><input type="password" id="signup-password" class="input-field" placeholder="Password"><input type="text" id="signup-ref" class="input-field" placeholder="Referral Code (Optional)"><button id="signup-btn" class="button">Sign Up</button><a id="show-login" class="auth-toggle-link">Already have an account? Login</a></div>`;
                 document.getElementById('show-signup').addEventListener('click', () => { document.getElementById('login-view').classList.add('hidden'); document.getElementById('signup-view').classList.remove('hidden'); });
                 document.getElementById('show-login').addEventListener('click', () => { document.getElementById('signup-view').classList.add('hidden'); document.getElementById('login-view').classList.remove('hidden'); });
-                document.getElementById('login-btn').addEventListener('click', () => auth.login(document.getElementById('login-email').value, document.getElementById('login-password').value));
-                document.getElementById('signup-btn').addEventListener('click', () => auth.signup(document.getElementById('signup-fname').value, document.getElementById('signup-lname').value, document.getElementById('signup-email').value, document.getElementById('signup-password').value, document.getElementById('signup-ref').value));
+                document.getElementById('login-btn').addEventListener('click', () => handleLogin(document.getElementById('login-email').value, document.getElementById('login-password').value));
+                document.getElementById('signup-btn').addEventListener('click', () => handleSignup(document.getElementById('signup-fname').value, document.getElementById('signup-lname').value, document.getElementById('signup-email').value, document.getElementById('signup-password').value, document.getElementById('signup-ref').value));
             }
 
             function initializeApp() {
@@ -694,12 +745,9 @@
                 dom.header.style.display = 'flex';
                 dom.nav.style.display = 'flex';
                 
-                checkAndAutoApproveWithdrawals();
-
-                dom.userGreeting.textContent = `Welcome, ${state.user.firstName}!`;
-                const referralCode = state.user.firstName.toUpperCase() + '123';
-                dom.referralCode.textContent = referralCode;
-                const text = `Hey! I'm using Pro Spin App. Join with my code *${referralCode}* to get bonus coins! @Proearningappbot`;
+                dom.userGreeting.textContent = `Welcome, ${state.firstName}!`;
+                dom.referralCode.textContent = state.referralCode;
+                const text = `Hey! I'm using Pro Spin App. Join with my code *${state.referralCode}* to get bonus coins! @Proearningappbot`;
                 dom.telegramShareBtn.href = `https://t.me/share/url?text=${encodeURIComponent(text)}`;
                 dom.supportMailBtn.href = 'https://t.me/groot9878';
                 dom.supportMailBtn.target = '_blank';
@@ -708,91 +756,229 @@
                 renderDailyRewards();
                 updateCoinDisplay();
                 updateWalletUI();
-                renderReferredMembers();
                 showScreen('home');
             }
 
+            // --- ADMIN ---
             window.showAdminLogin = function() {
                 if (isAdminLoggedIn) { dom.header.style.display = 'none'; dom.nav.style.display = 'none'; showScreen('admin'); return; }
                 const code = prompt("Enter admin code:");
                 if (code === "GEDOLADOCANDO") { isAdminLoggedIn = true; dom.header.style.display = 'none'; dom.nav.style.display = 'none'; renderAdminPanel(); showScreen('admin'); } else if (code) { alert("Incorrect code."); }
             };
-            function adminLogout() { isAdminLoggedIn = false; dom.adminScreen.classList.remove('active'); dom.header.style.display = 'flex'; dom.nav.style.display = 'flex'; auth.check(); }
-            
+            function adminLogout() { isAdminLoggedIn = false; dom.adminScreen.classList.remove('active'); dom.header.style.display = 'flex'; dom.nav.style.display = 'flex'; showScreen('home'); }
+
             function renderAdminPanel() {
-                dom.adminRequestList.innerHTML = '';
-                dom.adminUserList.innerHTML = '';
-                let hasPendingWithdrawals = false;
-                
-                checkAndAutoApproveWithdrawals();
+                renderAdminUsersAndWithdrawals();
+                renderAdminContentLists();
+            }
 
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key.startsWith('proSpinAppState_')) {
-                        const userEmail = key.replace('proSpinAppState_', ''); const userState = JSON.parse(safeGetLS(key));
-                        if (userState.transactionHistory) {
-                            const pendingTxs = userState.transactionHistory.filter(tx => tx.status === 'Pending' && tx.type === 'withdrawal');
-                            if (pendingTxs.length > 0) hasPendingWithdrawals = true;
-                            pendingTxs.forEach(tx => {
-                                const item = document.createElement('div'); item.className = 'admin-request-item';
-                                item.innerHTML = `<div class="admin-request-details"><span class="user-email">${userEmail}</span><span><b>Holder:</b> ${tx.holderName}</span><span><b>Number:</b> ${tx.walletNumber} (${tx.currency})</span><span><strong>Amount: ${tx.amount} Coins</strong></span></div><button class="approve-btn" data-user-email="${userEmail}" data-tx-id="${tx.id}">Approve</button>`;
-                                dom.adminRequestList.appendChild(item);
-                            });
-                        }
+            function renderAdminUsersAndWithdrawals() {
+                dom.adminRequestList.innerHTML = '<p>Loading requests...</p>';
+                dom.adminUserList.innerHTML = '<p>Loading users...</p>';
+                
+                db.ref('userState').once('value', snapshot => {
+                    const allUsers = snapshot.val();
+                    if (!allUsers) {
+                        dom.adminRequestList.innerHTML = '<p>No pending withdrawal requests.</p>';
+                        dom.adminUserList.innerHTML = '<p>No users found.</p>';
+                        return;
                     }
-                }
-                if (!hasPendingWithdrawals) dom.adminRequestList.innerHTML = '<p>No pending withdrawal requests.</p>';
-                
-                const allUsers = auth.usersDB; 
-                const userListTitle = dom.adminUserList.previousElementSibling;
-                if (userListTitle && userListTitle.tagName === 'H3') {
-                    userListTitle.innerHTML = `All Registered Users (${allUsers.length}) <small style="font-weight: normal; font-size: 0.8em; color: var(--admin-light-text-color);"><br><b>Important:</b> This app uses browser localStorage for data. The user list below only shows accounts registered in <b>this specific browser</b>. A global user list is not possible without a central server and database.</small>`;
-                }
-
-                dom.adminUserList.innerHTML = '';
-                if (allUsers.length > 0) {
-                    allUsers.forEach(user => {
-                        const item = document.createElement('div'); item.className = `admin-user-item ${user.isBanned ? 'banned-user' : ''}`;
-                        const banButtonHTML = user.isBanned ? `<button class="unban-btn" data-user-email="${user.email}">Unban</button>` : `<button class="ban-btn" data-user-email="${user.email}">Ban</button>`;
-                        item.innerHTML = `<div class="admin-user-info"><strong>${user.firstName} ${user.lastName}</strong><span>${user.email}</span><span style="color: var(--admin-secondary-color); font-size: 0.8em;">Device: ${user.device || 'N/A'}</span></div><div class="admin-user-actions">${banButtonHTML}<button class="send-coins-btn" data-user-email="${user.email}">Send Coins</button></div>`;
+                    
+                    dom.adminRequestList.innerHTML = '';
+                    dom.adminUserList.innerHTML = '';
+                    let hasPendingWithdrawals = false;
+                    
+                    Object.entries(allUsers).forEach(([uid, userState]) => {
+                        const item = document.createElement('div');
+                        item.className = `admin-user-item ${userState.isBanned ? 'banned-user' : ''}`;
+                        const banButtonHTML = userState.isBanned ? `<button class="unban-btn" data-user-uid="${uid}">Unban</button>` : `<button class="ban-btn" data-user-uid="${uid}">Ban</button>`;
+                        item.innerHTML = `<div class="admin-user-info"><strong>${userState.firstName} ${userState.lastName}</strong><span>${userState.email}</span><span>Coins: ${Number(userState.coins || 0).toFixed(2)}</span><span style="color: var(--admin-secondary-color); font-size: 0.8em;">Device: ${userState.device || 'N/A'}</span></div><div class="admin-user-actions">${banButtonHTML}<button class="send-coins-btn" data-user-uid="${uid}">Send Coins</button></div>`;
                         dom.adminUserList.appendChild(item);
+
+                        if (userState.transactionHistory) {
+                           const historyArray = Array.isArray(userState.transactionHistory) ? userState.transactionHistory : Object.values(userState.transactionHistory);
+                           const pendingTxs = historyArray.filter(tx => tx && tx.status === 'Pending' && tx.type === 'withdrawal');
+                           if (pendingTxs.length > 0) hasPendingWithdrawals = true;
+                           pendingTxs.forEach(tx => {
+                                const reqItem = document.createElement('div');
+                                reqItem.className = 'admin-request-item';
+                                reqItem.innerHTML = `<div class="admin-request-details"><span class="user-email">${userState.email}</span><span><b>Holder:</b> ${tx.holderName}</span><span><b>Number:</b> ${tx.walletNumber} (${tx.currency})</span><span><strong>Amount: ${tx.amount} Coins</strong></span></div><button class="approve-btn" data-user-uid="${uid}" data-tx-id="${tx.id}">Approve</button>`;
+                                dom.adminRequestList.appendChild(reqItem);
+                           });
+                        }
                     });
-                } else { dom.adminUserList.innerHTML = '<p>No users registered in this browser.</p>'; }
-                
-                addAdminButtonListeners();
+
+                    if (!hasPendingWithdrawals) dom.adminRequestList.innerHTML = '<p>No pending withdrawal requests.</p>';
+                    addAdminButtonListeners();
+                });
             }
 
             function addAdminButtonListeners() {
-                document.querySelectorAll('#admin .approve-btn').forEach(btn => btn.addEventListener('click', e => approveTransaction(e.target.dataset.userEmail, e.target.dataset.txId)));
-                document.querySelectorAll('#admin .send-coins-btn').forEach(btn => btn.addEventListener('click', e => promptSendCoins(e.target.dataset.userEmail)));
-                document.querySelectorAll('#admin .ban-btn, #admin .unban-btn').forEach(btn => btn.addEventListener('click', e => toggleBanStatus(e.target.dataset.userEmail)));
+                document.querySelectorAll('#admin .approve-btn').forEach(btn => btn.addEventListener('click', e => approveTransaction(e.target.dataset.userUid, e.target.dataset.txId)));
+                document.querySelectorAll('#admin .send-coins-btn').forEach(btn => btn.addEventListener('click', e => promptSendCoins(e.target.dataset.userUid)));
+                document.querySelectorAll('#admin .ban-btn, #admin .unban-btn').forEach(btn => btn.addEventListener('click', e => toggleBanStatus(e.target.dataset.userUid)));
             }
-            function approveTransaction(userEmail, txId) {
-                const stateKey = `proSpinAppState_${userEmail}`; const userState = JSON.parse(safeGetLS(stateKey));
-                if (userState && userState.transactionHistory) {
-                    const txIndex = userState.transactionHistory.findIndex(tx => tx.id.toString() === txId.toString());
-                    if (txIndex > -1) { userState.transactionHistory[txIndex].status = 'Approved'; safeSetLS(stateKey, JSON.stringify(userState)); alert(`Transaction approved.`); renderAdminPanel(); }
+            async function approveTransaction(userUid, txId) {
+                const userHistoryRef = db.ref(`userState/${userUid}/transactionHistory`);
+                const snapshot = await userHistoryRef.once('value');
+                const history = snapshot.val();
+                
+                if (history) {
+                    const txIndex = history.findIndex(tx => tx && tx.id.toString() === txId.toString());
+                    if (txIndex > -1) {
+                        db.ref(`userState/${userUid}/transactionHistory/${txIndex}/status`).set('Approved')
+                            .then(() => {
+                                alert(`Transaction approved.`);
+                                renderAdminUsersAndWithdrawals();
+                            });
+                    }
                 }
             }
-            function promptSendCoins(userEmail) {
-                const amountStr = prompt(`Enter coin amount to send to ${userEmail}:`);
-                if (amountStr) { const amount = parseFloat(amountStr); if (!isNaN(amount) && amount > 0) adminSendCoins(userEmail, amount); else alert("Invalid amount."); }
-            }
-            function adminSendCoins(targetUserEmail, amount) {
-                const stateKey = `proSpinAppState_${targetUserEmail}`; const userStateJSON = safeGetLS(stateKey);
-                if (userStateJSON) {
-                    let userState = JSON.parse(userStateJSON); userState.coins = (userState.coins || 0) + amount;
-                    userState.transactionHistory.push({ id: Date.now(), type: 'admin_send', holderName: 'Received from Admin', walletNumber: `+${amount} coins`, amount: amount, status: 'Completed' });
-                    safeSetLS(stateKey, JSON.stringify(userState)); alert(`Sent ${amount} coins.`);
-                } else { alert(`Could not find user data.`); }
-            }
-            function toggleBanStatus(userEmail) {
-                const userIndex = auth.usersDB.findIndex(u => u.email === userEmail);
-                if (userIndex > -1) {
-                    const user = auth.usersDB[userIndex]; user.isBanned = !user.isBanned;
-                    auth.saveUsersDB(); alert(`User ${user.firstName} has been ${user.isBanned ? 'banned' : 'unbanned'}.`); renderAdminPanel();
+            function promptSendCoins(userUid) {
+                const amountStr = prompt(`Enter coin amount to send:`);
+                if (amountStr) {
+                    const amount = parseFloat(amountStr);
+                    if (!isNaN(amount) && amount > 0) adminSendCoins(userUid, amount);
+                    else alert("Invalid amount.");
                 }
             }
+
+            function adminSendCoins(targetUserUid, amount) {
+                const userRef = db.ref(`userState/${targetUserUid}`);
+                userRef.transaction(userData => {
+                    if (userData) {
+                        userData.coins = (userData.coins || 0) + amount;
+                        if (!userData.transactionHistory) userData.transactionHistory = [];
+                        if (!Array.isArray(userData.transactionHistory)) userData.transactionHistory = Object.values(userData.transactionHistory);
+                        userData.transactionHistory.push({ id: Date.now(), type: 'admin_send', holderName: 'Received from Admin', walletNumber: `+${amount.toFixed(4)} coins`, amount: amount, status: 'Completed' });
+                    }
+                    return userData;
+                }, (error, committed) => {
+                    if (error) { alert('Transaction failed: ' + error); } 
+                    else if (!committed) { alert('Transaction aborted.'); } 
+                    else { alert(`Successfully sent ${amount} coins.`); renderAdminUsersAndWithdrawals(); }
+                });
+            }
+
+            function toggleBanStatus(userUid) {
+                const banRef = db.ref(`userState/${userUid}/isBanned`);
+                banRef.once('value', snapshot => {
+                    const isBanned = snapshot.val();
+                    banRef.set(!isBanned).then(() => {
+                        alert(`User has been ${!isBanned ? 'banned' : 'unbanned'}.`);
+                        renderAdminUsersAndWithdrawals();
+                    });
+                });
+            }
+
+            function uploadFileWithProgress(file, path, buttonElement) {
+                return new Promise((resolve, reject) => {
+                    const storageRef = storage.ref(`${path}/${Date.now()}_${file.name}`);
+                    const uploadTask = storageRef.put(file);
+
+                    uploadTask.on('state_changed', 
+                        (snapshot) => {
+                            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                            buttonElement.textContent = `Uploading ${progress.toFixed(0)}%...`;
+                        }, 
+                        (error) => {
+                            console.error("Upload Error:", error);
+                            reject(error);
+                        }, 
+                        () => {
+                            uploadTask.snapshot.ref.getDownloadURL().then(resolve).catch(reject);
+                        }
+                    );
+                });
+            }
+            
+            async function handleCreatePost() {
+                const title = dom.adminPostTitle.value.trim();
+                const caption = dom.adminPostCaption.value.trim();
+                const mediaFile = dom.adminPostMedia.files[0];
+                if (!title || !caption || !mediaFile) return alert("All fields for the post are required.");
+
+                dom.adminCreatePostBtn.disabled = true;
+                const originalButtonText = dom.adminCreatePostBtn.textContent;
+                
+                try {
+                    const mediaType = mediaFile.type.startsWith('video/') ? 'video' : 'image';
+                    const mediaUrl = await uploadFileWithProgress(mediaFile, 'post_media', dom.adminCreatePostBtn);
+                    
+                    dom.adminCreatePostBtn.textContent = 'Saving...';
+                    
+                    const newPostRef = db.ref('news').push();
+                    await newPostRef.set({
+                        id: newPostRef.key, title, caption, mediaUrl, mediaType,
+                        mediaPath: `post_media/${decodeURIComponent(mediaUrl.split('post_media%2F')[1].split('?')[0])}`,
+                        timestamp: firebase.database.ServerValue.TIMESTAMP,
+                        postedBy: 'Admin'
+                    });
+
+                    alert("Post created successfully!");
+                    dom.adminPostTitle.value = ''; dom.adminPostCaption.value = ''; dom.adminPostMedia.value = '';
+                    dom.adminPostMediaName.textContent = 'No file selected';
+                    renderAdminContentLists();
+                } catch (error) { 
+                    if (error.code === 'storage/unauthorized') {
+                        alert("UPLOAD FAILED: Permission Denied. Please check your Firebase Storage rules in the Firebase Console. They must allow writes for authenticated users.");
+                    } else {
+                        alert("Error creating post: " + error.message);
+                    }
+                    console.error(error); 
+                } finally { 
+                    dom.adminCreatePostBtn.disabled = false; 
+                    dom.adminCreatePostBtn.textContent = originalButtonText;
+                }
+            }
+            
+            function renderAdminContentLists() {
+                dom.adminPostsList.innerHTML = `<p>Loading posts...</p>`;
+                db.ref('news').once('value', snapshot => {
+                    dom.adminPostsList.innerHTML = '';
+                    if (!snapshot.exists()) {
+                        dom.adminPostsList.innerHTML = `<p>No posts found.</p>`;
+                        return;
+                    }
+                    snapshot.forEach(child => {
+                        const data = child.val();
+                        if (!data.id) return; 
+                        const item = document.createElement('div');
+                        item.className = 'admin-content-item';
+                        item.innerHTML = `
+                            <p>${data.title}</p>
+                            <div class="admin-content-actions">
+                                <button class="delete-post-btn" data-key="${data.id}">Delete</button>
+                            </div>`;
+                        dom.adminPostsList.appendChild(item);
+                    });
+                    document.querySelectorAll('.delete-post-btn').forEach(btn => {
+                        btn.addEventListener('click', e => handleDeleteContent(e.target.dataset.key));
+                    });
+                });
+            }
+
+            async function handleDeleteContent(key) {
+                if (!confirm(`Are you sure you want to delete this post? This cannot be undone.`)) return;
+                const dbRef = db.ref(`news/${key}`);
+                try {
+                    const snapshot = await dbRef.once('value');
+                    const data = snapshot.val();
+                    if (!data) throw new Error("Item not found in database.");
+
+                    if (data.mediaPath) {
+                        await storage.ref(data.mediaPath).delete().catch(err => console.warn("Storage file might not exist, continuing deletion:", err));
+                    }
+
+                    await dbRef.remove();
+                    alert(`Post deleted successfully.`);
+                    renderAdminContentLists();
+                } catch (error) {
+                    alert(`Error deleting: ${error.message}`);
+                    console.error("Deletion error:", error);
+                }
+            }
+
 
             // --- USER APP DATA & FUNCTIONS ---
             const WHEEL_PRIZES = [10, 1, 3, 1, 2, 1, 5, 0.50, 2, 1];
@@ -809,25 +995,39 @@
                 'topEarner': { title: "Top Earner", reward: 100, svg: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>' }
             };
             
-            function checkReferralAchievements(targetState) {
-                const count = targetState.totalReferrals; const achievements = targetState.achievements;
-                if (count >= 1 && !achievements.referrer1) { achievements.referrer1 = true; targetState.coins += ALL_ACHIEVEMENTS.referrer1.reward; }
-                if (count >= 5 && !achievements.referrer5) { achievements.referrer5 = true; targetState.coins += ALL_ACHIEVEMENTS.referrer5.reward; }
-            }
-
             function checkAchievements() { 
                 if (state.streakDay >= 4 && !state.achievements.streak3) { state.achievements.streak3 = true; addCoins(ALL_ACHIEVEMENTS.streak3.reward, true); showModal('Unlocked!', `3-Day Streak badge & ${ALL_ACHIEVEMENTS.streak3.reward} coins!`); renderAchievements(); } 
                 if (state.correctlyAnsweredQuestions.length >= QUIZ_QUESTIONS.length && !state.achievements.quizMaster) { state.achievements.quizMaster = true; addCoins(ALL_ACHIEVEMENTS.quizMaster.reward, true); showModal('Unlocked!', `Quiz Master badge & ${ALL_ACHIEVEMENTS.quizMaster.reward} coins!`); renderAchievements(); }
                 if (state.totalMined >= 50 && !state.achievements.minerPro) { state.achievements.minerPro = true; addCoins(ALL_ACHIEVEMENTS.minerPro.reward, true); showModal('Unlocked!', `Miner Pro badge & ${ALL_ACHIEVEMENTS.minerPro.reward} coins!`); renderAchievements(); }
                 if (state.tttWins >= 10 && !state.achievements.gameChampion) { state.achievements.gameChampion = true; addCoins(ALL_ACHIEVEMENTS.gameChampion.reward, true); showModal('Unlocked!', `Game Champion badge & ${ALL_ACHIEVEMENTS.gameChampion.reward} coins!`); renderAchievements(); }
                 if (state.coins >= 5000 && !state.achievements.topEarner) { state.achievements.topEarner = true; addCoins(ALL_ACHIEVEMENTS.topEarner.reward, true); showModal('Unlocked!', `Top Earner badge & ${ALL_ACHIEVEMENTS.topEarner.reward} coins!`); renderAchievements(); }
+                if (state.totalReferrals >= 1 && !state.achievements.referrer1) { state.achievements.referrer1 = true; addCoins(ALL_ACHIEVEMENTS.referrer1.reward, true); showModal('Unlocked!', `Referrer badge & ${ALL_ACHIEVEMENTS.referrer1.reward} coins!`); renderAchievements(); }
+                if (state.totalReferrals >= 5 && !state.achievements.referrer5) { state.achievements.referrer5 = true; addCoins(ALL_ACHIEVEMENTS.referrer5.reward, true); showModal('Unlocked!', `Super Referrer badge & ${ALL_ACHIEVEMENTS.referrer5.reward} coins!`); renderAchievements(); }
             }
             function renderAchievements() { dom.achievementsContainer.innerHTML = ''; for (const key in ALL_ACHIEVEMENTS) { const a = ALL_ACHIEVEMENTS[key]; const unlocked = state.achievements[key]; const div = document.createElement('div'); div.className = `achievement-badge ${unlocked ? 'unlocked' : ''}`; div.innerHTML = `<div class="badge-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${unlocked ? 'var(--gold-color)' : 'currentColor'}">${a.svg}</svg></div><p>${a.title}</p>`; dom.achievementsContainer.appendChild(div); } }
+            
             function renderReferredMembers() {
-                const members = auth.usersDB.filter(u => u.referredBy === state.user.email);
-                state.totalReferrals = members.length; checkReferralAchievements(state);
-                dom.referralListContainer.innerHTML = ''; if (members.length > 0) { const h = document.createElement('h3'); h.textContent = `Your Members (${members.length})`; const ul = document.createElement('ul'); members.forEach(m => { const li = document.createElement('li'); li.textContent = `${m.firstName} ${m.lastName}`; ul.appendChild(li); }); dom.referralListContainer.append(h, ul); }
+                dom.referralListContainer.innerHTML = '<p>Loading referrals...</p>';
+                db.ref('userState').orderByChild('referredBy').equalTo(state.user.uid).once('value', snapshot => {
+                    if (snapshot.exists()) {
+                        const members = snapshot.val();
+                        const memberCount = Object.keys(members).length;
+                        state.totalReferrals = memberCount; checkAchievements();
+                        dom.referralListContainer.innerHTML = '';
+                        const h = document.createElement('h3'); h.textContent = `Your Members (${memberCount})`;
+                        const ul = document.createElement('ul');
+                        Object.values(members).forEach(m => {
+                            const li = document.createElement('li');
+                            li.textContent = `${m.firstName} ${m.lastName}`;
+                            ul.appendChild(li);
+                        });
+                        dom.referralListContainer.append(h, ul);
+                    } else {
+                        dom.referralListContainer.innerHTML = '<h3>Your Members (0)</h3>';
+                    }
+                });
             }
+
             function updateWalletUI() { dom.currencyBtns.forEach(b => b.classList.toggle('active', b.dataset.currency === state.selectedCurrency)); dom.nprWallets.classList.toggle('hidden', state.selectedCurrency !== 'NPR'); dom.inrWallets.classList.toggle('hidden', state.selectedCurrency !== 'INR'); saveData(); }
             function checkStreak() { if (!state.lastClaimDate) return; const last = new Date(state.lastClaimDate); const yday = new Date(); yday.setDate(yday.getDate() - 1); if (getDateString(last) !== getDateString(yday) && getDateString(last) !== today()) state.streakDay = 1; }
             function renderDailyRewards() { dom.dailyRewardsContainer.innerHTML = ''; const coinLogoSVG = `<svg class="coin-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#f1c40f"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>`; const canClaim = state.lastClaimDate !== today(); for (let i = 1; i <= 7; i++) { const div = document.createElement('div'); div.className = 'reward-day'; if (i < state.streakDay) div.classList.add('claimed'); else if (i === state.streakDay && canClaim) { div.classList.add('claimable'); div.addEventListener('click', () => claimReward(i)); } div.innerHTML = `<div class="day-label">Day ${i}</div><div class="coin-reward">${i} ${coinLogoSVG}</div>`; dom.dailyRewardsContainer.appendChild(div); } }
@@ -1058,7 +1258,6 @@
             function renderMiningUpgrades() {
                 dom.miningBoostsContainer.innerHTML = '';
 
-                // Combo Pack Card
                 if (!state.mining.comboPackPurchased) {
                     const comboCard = document.createElement('div');
                     comboCard.className = 'boost-card';
@@ -1074,7 +1273,6 @@
                     btn.addEventListener('click', buyComboPack);
                 }
                 
-                // Tap Limit Upgrade Card
                 const currentTapLevel = state.mining.tapLevel;
                 const tapCard = document.createElement('div');
                 tapCard.className = 'boost-card';
@@ -1094,7 +1292,6 @@
                     dom.miningBoostsContainer.appendChild(tapCard);
                 }
 
-                // Profit Per Hour Upgrade Card
                 const currentProfitLevel = state.mining.profitLevel;
                 const profitCard = document.createElement('div');
                 profitCard.className = 'boost-card';
@@ -1156,31 +1353,61 @@
             }
 
             function renderNewsFeed() {
-                const newsFeed = JSON.parse(safeGetLS('proSpinNewsFeed') || '[]'); dom.newsFeedList.innerHTML = '';
-                if (newsFeed.length === 0) { dom.newsFeedList.innerHTML = '<p style="text-align: center;">No announcements yet.</p>'; return; }
-                newsFeed.slice().reverse().forEach(post => {
-                    const postEl = document.createElement('div'); postEl.className = 'news-post';
-                    let imageHTML = post.image ? `<img src="${post.image}" alt="${post.title}" class="news-post-image">` : '';
-                    postEl.innerHTML = `${imageHTML}<h3 class="news-post-title">${post.title}</h3><p class="news-post-caption">${post.caption}</p>`;
-                    dom.newsFeedList.appendChild(postEl);
+                dom.newsFeedList.innerHTML = '<p style="text-align: center;">Loading news...</p>';
+                db.ref('news').orderByChild('timestamp').once('value', snapshot => {
+                    dom.newsFeedList.innerHTML = '';
+                    if (!snapshot.exists()) {
+                        dom.newsFeedList.innerHTML = '<p style="text-align: center;">No announcements yet.</p>';
+                        return;
+                    }
+                    const newsFeed = [];
+                    snapshot.forEach(child => { newsFeed.push(child.val()); });
+                    newsFeed.reverse().forEach(post => {
+                        const postEl = document.createElement('div'); postEl.className = 'news-post';
+                        let mediaHTML = '';
+                        if (post.mediaType === 'video') {
+                            mediaHTML = `<video src="${post.mediaUrl}" controls class="news-post-media"></video>`;
+                        } else if (post.mediaType === 'image') {
+                            mediaHTML = `<img src="${post.mediaUrl}" alt="${post.title}" class="news-post-media">`;
+                        }
+                        const date = new Date(post.timestamp).toLocaleDateString();
+                        postEl.innerHTML = `
+                            ${mediaHTML}
+                            <h3 class="news-post-title">${post.title}</h3>
+                            <p class="news-post-caption">${post.caption}</p>
+                            <p class="news-post-meta">Posted by ${post.postedBy} on ${date}</p>`;
+                        dom.newsFeedList.appendChild(postEl);
+                    });
                 });
             }
+
             function renderTransactionHistory() {
-                dom.transactionHistoryList.innerHTML = ''; if (!state.transactionHistory || state.transactionHistory.length === 0) { dom.transactionHistoryList.innerHTML = '<p style="text-align:center;">No transactions yet.</p>'; return; }
-                state.transactionHistory.slice().reverse().forEach(tx => {
+                dom.transactionHistoryList.innerHTML = '';
+                const history = state.transactionHistory || [];
+                if (history.length === 0) {
+                    dom.transactionHistoryList.innerHTML = '<p style="text-align:center;">No transactions yet.</p>';
+                    return;
+                }
+                const historyArray = Array.isArray(history) ? history : Object.values(history);
+                historyArray.slice().reverse().forEach(tx => {
+                    if (!tx) return;
                     const li = document.createElement('li'); li.className = 'transaction-item';
-                    const amountPrefix = tx.type === 'admin_send' ? '+' : '-';
-                    li.innerHTML = `<div class="transaction-details"><span class="holder-name">${tx.holderName}</span><span>${tx.walletNumber || tx.currency}</span><span><strong>${amountPrefix}${tx.amount} Coins</strong></span></div><span class="transaction-status ${tx.status.toLowerCase()}">${tx.status}</span>`;
+                    const amountPrefix = (tx.type === 'admin_send' || tx.type === 'received') ? '+' : '-';
+                    li.innerHTML = `<div class="transaction-details"><span class="holder-name">${tx.holderName}</span><span>${tx.walletNumber || 'Coin Transfer'}</span><span><strong>${amountPrefix}${tx.amount.toFixed(4)} Coins</strong></span></div><span class="transaction-status ${tx.status.toLowerCase()}">${tx.status}</span>`;
                     dom.transactionHistoryList.appendChild(li);
                 });
-            }function handleWithdraw() {
+            }
+            
+            function handleWithdraw() {
                 const holderName = dom.walletNameInput.value.trim(); const walletNumber = dom.walletNumberInput.value.trim(); const amount = parseFloat(dom.withdrawAmountInput.value);
                 if (!holderName || !walletNumber || !amount) { return showModal('Incomplete Details', 'Please fill in all withdrawal fields.'); }
                 if (isNaN(amount) || amount < 1000) { return showModal('Invalid Amount', `Minimum withdrawal is 1000 coins.`); }
                 if (amount > state.coins) { return showModal('Not Enough Coins', `You do not have enough coins to withdraw ${amount}.`); }
                 
                 const newTransaction = { id: Date.now(), type: 'withdrawal', holderName, walletNumber, amount, currency: state.selectedCurrency, status: 'Pending', requestTimestamp: Date.now() };
-                state.transactionHistory.push(newTransaction); addCoins(-amount);
+                if (!state.transactionHistory) state.transactionHistory = [];
+                state.transactionHistory.push(newTransaction);
+                addCoins(-amount);
                 dom.walletNameInput.value = ''; dom.walletNumberInput.value = ''; dom.withdrawAmountInput.value = '';
                 showModal('Request Submitted', `Your withdrawal for ${amount} coins is submitted.`);
                 renderTransactionHistory(); saveData();
@@ -1193,13 +1420,18 @@
             dom.requestWithdrawalBtn.addEventListener('click', handleWithdraw);
             dom.startTTTBtn.addEventListener('click', startTTTMatch);
             dom.mysteryBoxImg.addEventListener('click', claimMysteryBox);
-            dom.logoutBtn.addEventListener('click', auth.logout);
+            dom.logoutBtn.addEventListener('click', () => {
+                if (userStateListener && state.user?.uid) {
+                    db.ref('userState/' + state.user.uid).off('value', userStateListener);
+                }
+                auth.signOut();
+            });
             dom.adminLogoutBtn.addEventListener('click', adminLogout);
+            dom.adminCreatePostBtn.addEventListener('click', handleCreatePost);
+            dom.adminPostMedia.addEventListener('change', () => { dom.adminPostMediaName.textContent = dom.adminPostMedia.files[0]?.name || 'No file selected'; });
             dom.tapCoin.addEventListener('click', handleMineTap);
             dom.tapCoin.addEventListener('touchstart', handleMineTap, {passive: true});
             dom.claimPassiveProfitBtn.addEventListener('click', claimPassiveProfit);
-            
-            auth.check();
         });
     </script>
 </body>
