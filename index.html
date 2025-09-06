@@ -198,7 +198,9 @@
         .news-post { background-color: var(--card-color); border: 1px solid var(--border-color); border-radius: var(--border-radius); margin-bottom: 20px; padding: 20px; text-align: left; }
         .news-post-media { max-width: 100%; border-radius: 8px; margin-bottom: 15px; }
         .news-post-title { font-size: 1.3em; font-weight: 700; color: var(--text-color); margin: 0 0 10px 0; }
-        .news-post-caption { font-size: 1em; color: var(--light-text-color); line-height: 1.6; margin: 0; }
+        .news-post-caption { font-size: 1em; color: var(--light-text-color); line-height: 1.6; margin: 0; word-wrap: break-word; }
+        .news-post-caption a { color: var(--primary-color); text-decoration: none; }
+        .news-post-caption a:hover { text-decoration: underline; }
         .news-post-meta { font-size: 0.8em; color: var(--light-text-color); margin-top: 15px; }
         
         /* --- Mystery Box Styles --- */
@@ -252,9 +254,6 @@
         #admin .delete-post-btn { background-color: var(--admin-danger-color); }
         #admin .ban-btn { background-color: var(--admin-danger-color); }
         #admin .unban-btn { background-color: var(--admin-success-color); }
-        #admin .file-upload-label { display: block; padding: 10px; background-color: #333; text-align: center; border-radius: 8px; cursor: pointer; margin-top: 10px; }
-        #admin .file-upload-label:hover { background-color: #444; }
-        #admin .file-name-display { color: #8b949e; font-style: italic; font-size: 0.9em; margin-top: 5px; display: block; }
     </style>
 </head>
 <body>
@@ -440,9 +439,9 @@
                     <h3>Create New Post</h3>
                     <input type="text" id="admin-post-title" class="input-field" placeholder="Post Title">
                     <textarea id="admin-post-caption" class="input-field" placeholder="Post Caption" rows="4"></textarea>
-                    <input type="file" id="admin-post-media" accept="image/*,video/*" class="hidden">
-                    <label for="admin-post-media" class="file-upload-label">Select Image or Video</label>
-                    <span id="admin-post-media-name" class="file-name-display">No file selected</span>
+                    <!-- MODIFICATION START: Replaced file upload with URL input -->
+                    <input type="text" id="admin-post-image-url" class="input-field" placeholder="Paste Image URL Here">
+                    <!-- MODIFICATION END -->
                     <button id="admin-create-post-btn" class="button">Create Post</button>
                 </div>
                 <div class="card">
@@ -525,7 +524,10 @@
                 newsFeedList: document.getElementById('news-feed-list'),
                 adminScreen: document.getElementById('admin'), adminLogoutBtn: document.getElementById('admin-logout-btn'),
                 adminRequestList: document.getElementById('admin-request-list'), adminUserList: document.getElementById('admin-user-list'),
-                adminPostTitle: document.getElementById('admin-post-title'), adminPostCaption: document.getElementById('admin-post-caption'), adminPostMedia: document.getElementById('admin-post-media'), adminPostMediaName: document.getElementById('admin-post-media-name'), adminCreatePostBtn: document.getElementById('admin-create-post-btn'), adminPostsList: document.getElementById('admin-posts-list'),
+                adminPostTitle: document.getElementById('admin-post-title'), adminPostCaption: document.getElementById('admin-post-caption'), 
+                adminPostImageUrl: document.getElementById('admin-post-image-url'), // MODIFICATION: Added URL input reference
+                adminCreatePostBtn: document.getElementById('admin-create-post-btn'), 
+                adminPostsList: document.getElementById('admin-posts-list'),
                 miningScreenContainer: document.getElementById('mining-screen-container'), tapCoin: document.getElementById('tap-coin'), tappedBalanceDisplay: document.getElementById('tapped-balance-display'),
                 profitPerHourDisplay: document.getElementById('profit-per-hour'),
                 miningLimitInfo: document.getElementById('mining-limit-info'), miningCooldownTimer: document.getElementById('mining-cooldown-timer'), miningTapsLeft: document.getElementById('mining-taps-left'),
@@ -871,67 +873,46 @@
                 });
             }
 
-            function uploadFileWithProgress(file, path, buttonElement) {
-                return new Promise((resolve, reject) => {
-                    const storageRef = storage.ref(`${path}/${Date.now()}_${file.name}`);
-                    const uploadTask = storageRef.put(file);
-
-                    uploadTask.on('state_changed', 
-                        (snapshot) => {
-                            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                            buttonElement.textContent = `Uploading ${progress.toFixed(0)}%...`;
-                        }, 
-                        (error) => {
-                            console.error("Upload Error:", error);
-                            reject(error);
-                        }, 
-                        () => {
-                            uploadTask.snapshot.ref.getDownloadURL().then(resolve).catch(reject);
-                        }
-                    );
-                });
-            }
-            
+            // MODIFICATION START: Replaced the entire handleCreatePost function
             async function handleCreatePost() {
                 const title = dom.adminPostTitle.value.trim();
                 const caption = dom.adminPostCaption.value.trim();
-                const mediaFile = dom.adminPostMedia.files[0];
-                if (!title || !caption || !mediaFile) return alert("All fields for the post are required.");
+                const mediaUrl = dom.adminPostImageUrl.value.trim(); // Get link from URL input
+                
+                if (!title || !caption || !mediaUrl) {
+                    return alert("Title, Caption, and Image URL are required.");
+                }
 
                 dom.adminCreatePostBtn.disabled = true;
-                const originalButtonText = dom.adminCreatePostBtn.textContent;
+                dom.adminCreatePostBtn.textContent = 'Creating...';
                 
                 try {
-                    const mediaType = mediaFile.type.startsWith('video/') ? 'video' : 'image';
-                    const mediaUrl = await uploadFileWithProgress(mediaFile, 'post_media', dom.adminCreatePostBtn);
-                    
-                    dom.adminCreatePostBtn.textContent = 'Saving...';
-                    
                     const newPostRef = db.ref('news').push();
                     await newPostRef.set({
-                        id: newPostRef.key, title, caption, mediaUrl, mediaType,
-                        mediaPath: `post_media/${decodeURIComponent(mediaUrl.split('post_media%2F')[1].split('?')[0])}`,
+                        id: newPostRef.key,
+                        title: title,
+                        caption: caption,
+                        mediaUrl: mediaUrl, // Save the URL directly
+                        mediaType: 'image', // Assume it's an image
                         timestamp: firebase.database.ServerValue.TIMESTAMP,
                         postedBy: 'Admin'
                     });
 
                     alert("Post created successfully!");
-                    dom.adminPostTitle.value = ''; dom.adminPostCaption.value = ''; dom.adminPostMedia.value = '';
-                    dom.adminPostMediaName.textContent = 'No file selected';
+                    dom.adminPostTitle.value = '';
+                    dom.adminPostCaption.value = '';
+                    dom.adminPostImageUrl.value = ''; // Clear the URL field
                     renderAdminContentLists();
                 } catch (error) { 
-                    if (error.code === 'storage/unauthorized') {
-                        alert("UPLOAD FAILED: Permission Denied. Please check your Firebase Storage rules in the Firebase Console. They must allow writes for authenticated users.");
-                    } else {
-                        alert("Error creating post: " + error.message);
-                    }
+                    alert("Error creating post: " + error.message);
                     console.error(error); 
                 } finally { 
                     dom.adminCreatePostBtn.disabled = false; 
-                    dom.adminCreatePostBtn.textContent = originalButtonText;
+                    dom.adminCreatePostBtn.textContent = 'Create Post';
                 }
             }
-            
+            // MODIFICATION END
+
             function renderAdminContentLists() {
                 dom.adminPostsList.innerHTML = `<p>Loading posts...</p>`;
                 db.ref('news').once('value', snapshot => {
@@ -966,9 +947,10 @@
                     const data = snapshot.val();
                     if (!data) throw new Error("Item not found in database.");
 
-                    if (data.mediaPath) {
-                        await storage.ref(data.mediaPath).delete().catch(err => console.warn("Storage file might not exist, continuing deletion:", err));
-                    }
+                    // No need to delete from storage as we are using URLs
+                    // if (data.mediaPath) {
+                    //     await storage.ref(data.mediaPath).delete().catch(err => console.warn("Storage file might not exist, continuing deletion:", err));
+                    // }
 
                     await dbRef.remove();
                     alert(`Post deleted successfully.`);
@@ -1352,8 +1334,18 @@
                 }
             }
 
+            // MODIFICATION START: Updated renderNewsFeed to make links clickable
             function renderNewsFeed() {
                 dom.newsFeedList.innerHTML = '<p style="text-align: center;">Loading news...</p>';
+
+                // Helper function to find URLs in text and convert them to clickable links
+                const linkify = (text) => {
+                    const urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+                    // Sanitize HTML to prevent XSS
+                    const sanitizedText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    return sanitizedText.replace(urlRegex, url => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
+                };
+
                 db.ref('news').orderByChild('timestamp').once('value', snapshot => {
                     dom.newsFeedList.innerHTML = '';
                     if (!snapshot.exists()) {
@@ -1365,21 +1357,23 @@
                     newsFeed.reverse().forEach(post => {
                         const postEl = document.createElement('div'); postEl.className = 'news-post';
                         let mediaHTML = '';
-                        if (post.mediaType === 'video') {
-                            mediaHTML = `<video src="${post.mediaUrl}" controls class="news-post-media"></video>`;
-                        } else if (post.mediaType === 'image') {
+                        // mediaType is now fixed to 'image' when using URL
+                        if (post.mediaType === 'image' && post.mediaUrl) {
                             mediaHTML = `<img src="${post.mediaUrl}" alt="${post.title}" class="news-post-media">`;
                         }
                         const date = new Date(post.timestamp).toLocaleDateString();
+                        const processedCaption = linkify(post.caption); // Process caption for links
+
                         postEl.innerHTML = `
                             ${mediaHTML}
                             <h3 class="news-post-title">${post.title}</h3>
-                            <p class="news-post-caption">${post.caption}</p>
+                            <p class="news-post-caption">${processedCaption}</p>
                             <p class="news-post-meta">Posted by ${post.postedBy} on ${date}</p>`;
                         dom.newsFeedList.appendChild(postEl);
                     });
                 });
             }
+            // MODIFICATION END
 
             function renderTransactionHistory() {
                 dom.transactionHistoryList.innerHTML = '';
@@ -1428,7 +1422,6 @@
             });
             dom.adminLogoutBtn.addEventListener('click', adminLogout);
             dom.adminCreatePostBtn.addEventListener('click', handleCreatePost);
-            dom.adminPostMedia.addEventListener('change', () => { dom.adminPostMediaName.textContent = dom.adminPostMedia.files[0]?.name || 'No file selected'; });
             dom.tapCoin.addEventListener('click', handleMineTap);
             dom.tapCoin.addEventListener('touchstart', handleMineTap, {passive: true});
             dom.claimPassiveProfitBtn.addEventListener('click', claimPassiveProfit);
