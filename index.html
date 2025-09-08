@@ -236,7 +236,7 @@
         #admin .button { color: white !important; background: linear-gradient(135deg, var(--admin-primary-color), var(--admin-secondary-color)); border-radius: var(--border-radius); display: inline-block; padding: 12px 20px; margin: 10px 0; font-size: 1em; font-weight: 600; border: none; }
         #admin .button.danger { background: linear-gradient(135deg, #e74c3c, #c0392b); }
         #admin .card { background: var(--admin-card-color); border: 1px solid var(--admin-border-color); text-align: left; }
-        #admin .input-field, #admin textarea { background: #0d1117; color: var(--admin-text-color); border: 1px solid var(--admin-border-color); }
+        #admin .input-field, #admin textarea, #admin select { background: #0d1117; color: var(--admin-text-color); border: 1px solid var(--admin-border-color); }
         #admin .admin-request-item { background: #0d1117; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--admin-border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
         #admin .admin-request-details { text-align: left; }
         #admin .admin-request-details span { display: block; margin-bottom: 4px; }
@@ -247,13 +247,78 @@
         #admin .admin-user-item.banned-user .admin-user-info strong { color: var(--admin-danger-color); text-decoration: line-through; }
         #admin .admin-content-item { display: flex; justify-content: space-between; align-items: center; background: #0d1117; padding: 12px 15px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--admin-border-color); font-size: 0.9em; }
         #admin .admin-content-item p { margin: 0; flex-grow: 1; }
-        #admin .admin-user-actions, #admin .admin-content-actions { display: flex; gap: 5px; }
-        #admin .approve-btn, #admin .send-coins-btn, #admin .delete-post-btn, #admin .ban-btn, #admin .unban-btn { border: none; padding: 8px 12px; font-size: 0.9em; border-radius: 6px; cursor: pointer; color: white; }
+        #admin .admin-user-actions, #admin .admin-content-actions { display: flex; gap: 5px; flex-wrap: wrap; }
+        #admin .approve-btn, #admin .send-coins-btn, #admin .delete-post-btn, #admin .ban-btn, #admin .unban-btn, #admin .deduct-coins-btn { border: none; padding: 8px 12px; font-size: 0.9em; border-radius: 6px; cursor: pointer; color: white; }
         #admin .approve-btn { background-color: var(--admin-success-color); }
         #admin .send-coins-btn { background-color: var(--admin-primary-color); }
+        #admin .deduct-coins-btn { background-color: #f39c12; }
         #admin .delete-post-btn { background-color: var(--admin-danger-color); }
         #admin .ban-btn { background-color: var(--admin-danger-color); }
         #admin .unban-btn { background-color: var(--admin-success-color); }
+        #admin .admin-task-item { display: flex; justify-content: space-between; align-items: center; background: #0d1117; padding: 12px 15px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--admin-border-color); }
+        #admin .admin-task-details { flex-grow: 1; }
+        #admin .admin-task-details p { margin: 0 0 5px 0; }
+        
+        /* --- Telegram Popup Styles --- */
+        #telegram-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: none; /* Initially hidden */
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+        }
+        #telegram-popup .popup-content {
+            background: var(--card-color);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            text-align: center;
+            box-shadow: var(--shadow);
+            width: 90%;
+            max-width: 380px;
+            position: relative;
+            animation: popup-appear 0.3s ease-out;
+        }
+        @keyframes popup-appear {
+          from { transform: scale(0.8); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+        .popup-close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 2em;
+            color: var(--light-text-color);
+            cursor: pointer;
+            line-height: 1;
+        }
+        .popup-img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 4px solid var(--primary-color);
+            object-fit: cover;
+            margin-bottom: 15px;
+        }
+        #telegram-popup h2 {
+            font-size: 1.6em;
+            margin-bottom: 10px;
+        }
+        #telegram-popup p {
+            margin-bottom: 20px;
+            font-size: 0.95em;
+        }
+        .popup-join-btn {
+            display: inline-block;
+            width: 80%;
+            background: linear-gradient(135deg, #2AABEE, #229ED9);
+        }
+
     </style>
 </head>
 <body>
@@ -318,6 +383,7 @@
             </div>
             <div id="task" class="screen">
                 <h2>Tasks & Rewards</h2>
+                <div id="user-tasks-list"></div>
                 <div class="card" id="mystery-box-card">
                     <h3>Daily Mystery Box</h3>
                     <p>Click the box below to reveal your daily surprise! What could be inside?</p>
@@ -326,10 +392,6 @@
                         <div id="coin-animation-container" class="coin-animation-container"></div>
                     </div>
                     <p id="mystery-box-status" style="font-weight: bold; margin-top: 15px; color: var(--primary-color);"></p>
-                </div>
-                 <div class="card">
-                    <h3>More Tasks</h3>
-                    <p>New tasks are coming soon! Check back later for more ways to earn.</p>
                 </div>
             </div>
             <div id="spin" class="screen">
@@ -439,14 +501,26 @@
                     <h3>Create New Post</h3>
                     <input type="text" id="admin-post-title" class="input-field" placeholder="Post Title">
                     <textarea id="admin-post-caption" class="input-field" placeholder="Post Caption" rows="4"></textarea>
-                    <!-- MODIFICATION START: Replaced file upload with URL input -->
                     <input type="text" id="admin-post-image-url" class="input-field" placeholder="Paste Image URL Here">
-                    <!-- MODIFICATION END -->
                     <button id="admin-create-post-btn" class="button">Create Post</button>
                 </div>
                 <div class="card">
                     <h3>Manage Posts</h3>
                     <div id="admin-posts-list"></div>
+                </div>
+                <div class="card">
+                    <h3>Manage Tasks</h3>
+                    <input type="text" id="admin-task-title" class="input-field" placeholder="Task Title">
+                    <textarea id="admin-task-description" class="input-field" placeholder="Task Description" rows="3"></textarea>
+                    <input type="url" id="admin-task-link" class="input-field" placeholder="Task URL (e.g., https://...)">
+                    <input type="number" id="admin-task-reward" class="input-field" placeholder="Coin Reward">
+                    <select id="admin-task-type" class="input-field">
+                        <option value="social">Social Media</option>
+                        <option value="video">Video</option>
+                        <option value="website">Website Visit</option>
+                    </select>
+                    <button id="admin-create-task-btn" class="button">Create Task</button>
+                    <div id="admin-tasks-list"></div>
                 </div>
                 <hr style="border-color: var(--admin-border-color); margin: 40px 0;">
                 <div class="card">
@@ -473,14 +547,21 @@
     </div>
     <div id="modal"><div class="modal-content"><h3 id="modal-title"></h3><p id="modal-text"></p><button class="button" id="modal-close">OK</button></div></div>
     
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <!-- Telegram Popup -->
+    <div id="telegram-popup">
+        <div class="popup-content">
+            <span class="popup-close">&times;</span>
+            <img src="https://i.ibb.co/S4rdmMbc/IMG-20250908-173220-831.jpg" alt="Community Logo" class="popup-img">
+            <h2>Join Our Community!</h2>
+            <p>Get the latest updates, announcements, and support by joining our official Telegram channel.</p>
+            <a href="https://t.me/aicommunity7" target="_blank" class="button popup-join-btn">
+                Join Telegram
+            </a>
+        </div>
+    </div>
 
     <script>
-        // --- IMPORTANT: PASTE YOUR FIREBASE CONFIGURATION HERE ---
+        // --- DEFER FIREBASE SDK LOADING ---
         const firebaseConfig = {
             apiKey: "AIzaSyA_ECQnV4pIUaCMmo8fDPSvceqOi54DAHk",
             authDomain: "pro-earning-apps.firebaseapp.com",
@@ -491,14 +572,38 @@
             appId: "1:96262015986:web:47c0c4bcf3fc7a760eb96b",
             measurementId: "G-6YHR0LCJWK"
         };
-
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.database();
-        const storage = firebase.storage();
+        
+        function loadFirebase(callback) {
+            const scripts = [
+                "https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js",
+                "https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js",
+                "https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js",
+                "https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"
+            ];
+            let loadedScripts = 0;
+            scripts.forEach(src => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.async = true;
+                script.onload = () => {
+                    loadedScripts++;
+                    if (loadedScripts === scripts.length) {
+                        firebase.initializeApp(firebaseConfig);
+                        callback(firebase.auth(), firebase.database(), firebase.storage());
+                    }
+                };
+                document.head.appendChild(script);
+            });
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
+             loadFirebase((auth, db, storage) => {
+                // Firebase is ready, start the app logic
+                mainApp(auth, db, storage);
+            });
+        });
+
+        function mainApp(auth, db, storage) {
             let isAdminLoggedIn = false;
             let miningCooldownInterval = null;
             let passiveProfitInterval = null;
@@ -522,12 +627,14 @@
                 tttGameBoard: document.getElementById('game-board'), tttStatusText: document.getElementById('ttt-status-text'), startTTTBtn: document.getElementById('start-ttt-btn'), tttScoreboard: document.getElementById('ttt-scoreboard'), tttRoundText: document.getElementById('ttt-round-text'),
                 achievementsContainer: document.getElementById('achievements-container'),
                 newsFeedList: document.getElementById('news-feed-list'),
+                userTasksList: document.getElementById('user-tasks-list'),
                 adminScreen: document.getElementById('admin'), adminLogoutBtn: document.getElementById('admin-logout-btn'),
                 adminRequestList: document.getElementById('admin-request-list'), adminUserList: document.getElementById('admin-user-list'),
                 adminPostTitle: document.getElementById('admin-post-title'), adminPostCaption: document.getElementById('admin-post-caption'), 
-                adminPostImageUrl: document.getElementById('admin-post-image-url'), // MODIFICATION: Added URL input reference
+                adminPostImageUrl: document.getElementById('admin-post-image-url'), 
                 adminCreatePostBtn: document.getElementById('admin-create-post-btn'), 
                 adminPostsList: document.getElementById('admin-posts-list'),
+                adminTaskTitle: document.getElementById('admin-task-title'), adminTaskDescription: document.getElementById('admin-task-description'), adminTaskLink: document.getElementById('admin-task-link'), adminTaskReward: document.getElementById('admin-task-reward'), adminTaskType: document.getElementById('admin-task-type'), adminCreateTaskBtn: document.getElementById('admin-create-task-btn'), adminTasksList: document.getElementById('admin-tasks-list'),
                 miningScreenContainer: document.getElementById('mining-screen-container'), tapCoin: document.getElementById('tap-coin'), tappedBalanceDisplay: document.getElementById('tapped-balance-display'),
                 profitPerHourDisplay: document.getElementById('profit-per-hour'),
                 miningLimitInfo: document.getElementById('mining-limit-info'), miningCooldownTimer: document.getElementById('mining-cooldown-timer'), miningTapsLeft: document.getElementById('mining-taps-left'),
@@ -638,7 +745,7 @@
                 if (targetId === 'quiz') { updateQuizUI(); }
                 if (targetId === 'tictactoe') { updateTTTButtonState(); }
                 if (targetId === 'mining') { initializeMiningGame(); }
-                if (targetId === 'task') { updateMysteryBoxUI(); }
+                if (targetId === 'task') { renderUserTasks(); updateMysteryBoxUI(); }
                 if (targetId === 'refer') { renderReferredMembers(); }
             }
             
@@ -759,7 +866,36 @@
                 updateCoinDisplay();
                 updateWalletUI();
                 showScreen('home');
+
+                if (!sessionStorage.getItem('telegramPopupShown')) {
+                    showTelegramPopup();
+                }
             }
+            
+            // --- TELEGRAM POPUP ---
+            function setupTelegramPopup() {
+                const popup = document.getElementById('telegram-popup');
+                if (!popup) return;
+                const closeBtn = popup.querySelector('.popup-close');
+                
+                const closePopup = () => {
+                    popup.style.display = 'none';
+                    sessionStorage.setItem('telegramPopupShown', 'true');
+                };
+
+                closeBtn.addEventListener('click', closePopup);
+                popup.addEventListener('click', (e) => {
+                    if (e.target === popup) {
+                        closePopup();
+                    }
+                });
+            }
+            function showTelegramPopup() {
+                const popup = document.getElementById('telegram-popup');
+                if (popup) popup.style.display = 'flex';
+            }
+            setupTelegramPopup();
+
 
             // --- ADMIN ---
             window.showAdminLogin = function() {
@@ -772,6 +908,7 @@
             function renderAdminPanel() {
                 renderAdminUsersAndWithdrawals();
                 renderAdminContentLists();
+                renderAdminTasks();
             }
 
             function renderAdminUsersAndWithdrawals() {
@@ -794,7 +931,18 @@
                         const item = document.createElement('div');
                         item.className = `admin-user-item ${userState.isBanned ? 'banned-user' : ''}`;
                         const banButtonHTML = userState.isBanned ? `<button class="unban-btn" data-user-uid="${uid}">Unban</button>` : `<button class="ban-btn" data-user-uid="${uid}">Ban</button>`;
-                        item.innerHTML = `<div class="admin-user-info"><strong>${userState.firstName} ${userState.lastName}</strong><span>${userState.email}</span><span>Coins: ${Number(userState.coins || 0).toFixed(2)}</span><span style="color: var(--admin-secondary-color); font-size: 0.8em;">Device: ${userState.device || 'N/A'}</span></div><div class="admin-user-actions">${banButtonHTML}<button class="send-coins-btn" data-user-uid="${uid}">Send Coins</button></div>`;
+                        item.innerHTML = `
+                            <div class="admin-user-info">
+                                <strong>${userState.firstName} ${userState.lastName}</strong>
+                                <span>${userState.email}</span>
+                                <span>Coins: ${Number(userState.coins || 0).toFixed(4)}</span>
+                                <span style="color: var(--admin-secondary-color); font-size: 0.8em;">Device: ${userState.device || 'N/A'}</span>
+                            </div>
+                            <div class="admin-user-actions">
+                                ${banButtonHTML}
+                                <button class="send-coins-btn" data-user-uid="${uid}">Send</button>
+                                <button class="deduct-coins-btn" data-user-uid="${uid}">Deduct</button>
+                            </div>`;
                         dom.adminUserList.appendChild(item);
 
                         if (userState.transactionHistory) {
@@ -817,49 +965,51 @@
 
             function addAdminButtonListeners() {
                 document.querySelectorAll('#admin .approve-btn').forEach(btn => btn.addEventListener('click', e => approveTransaction(e.target.dataset.userUid, e.target.dataset.txId)));
-                document.querySelectorAll('#admin .send-coins-btn').forEach(btn => btn.addEventListener('click', e => promptSendCoins(e.target.dataset.userUid)));
+                document.querySelectorAll('#admin .send-coins-btn').forEach(btn => btn.addEventListener('click', e => promptCoinAdjustment(e.target.dataset.userUid, 'send')));
+                document.querySelectorAll('#admin .deduct-coins-btn').forEach(btn => btn.addEventListener('click', e => promptCoinAdjustment(e.target.dataset.userUid, 'deduct')));
                 document.querySelectorAll('#admin .ban-btn, #admin .unban-btn').forEach(btn => btn.addEventListener('click', e => toggleBanStatus(e.target.dataset.userUid)));
             }
-            async function approveTransaction(userUid, txId) {
-                const userHistoryRef = db.ref(`userState/${userUid}/transactionHistory`);
-                const snapshot = await userHistoryRef.once('value');
-                const history = snapshot.val();
-                
-                if (history) {
-                    const txIndex = history.findIndex(tx => tx && tx.id.toString() === txId.toString());
-                    if (txIndex > -1) {
-                        db.ref(`userState/${userUid}/transactionHistory/${txIndex}/status`).set('Approved')
-                            .then(() => {
-                                alert(`Transaction approved.`);
-                                renderAdminUsersAndWithdrawals();
-                            });
-                    }
-                }
-            }
-            function promptSendCoins(userUid) {
-                const amountStr = prompt(`Enter coin amount to send:`);
-                if (amountStr) {
-                    const amount = parseFloat(amountStr);
-                    if (!isNaN(amount) && amount > 0) adminSendCoins(userUid, amount);
-                    else alert("Invalid amount.");
-                }
+
+            function promptCoinAdjustment(userUid, action) {
+                const amountStr = prompt(`Enter coin amount to ${action}:`);
+                if (!amountStr) return;
+                const amount = parseFloat(amountStr);
+                if (isNaN(amount) || amount <= 0) return alert("Invalid amount.");
+                const remark = prompt(`Enter a remark for this transaction:`);
+                if (!remark) return alert("A remark is required.");
+                adminAdjustCoins(userUid, action === 'send' ? amount : -amount, remark);
             }
 
-            function adminSendCoins(targetUserUid, amount) {
+            function adminAdjustCoins(targetUserUid, amount, remark) {
                 const userRef = db.ref(`userState/${targetUserUid}`);
                 userRef.transaction(userData => {
                     if (userData) {
-                        userData.coins = (userData.coins || 0) + amount;
+                        const currentCoins = userData.coins || 0;
+                        if (amount < 0 && currentCoins < Math.abs(amount)) return; // Abort
+                        userData.coins = currentCoins + amount;
                         if (!userData.transactionHistory) userData.transactionHistory = [];
                         if (!Array.isArray(userData.transactionHistory)) userData.transactionHistory = Object.values(userData.transactionHistory);
-                        userData.transactionHistory.push({ id: Date.now(), type: 'admin_send', holderName: 'Received from Admin', walletNumber: `+${amount.toFixed(4)} coins`, amount: amount, status: 'Completed' });
+                        userData.transactionHistory.push({ id: Date.now(), type: amount > 0 ? 'admin_send' : 'admin_deduct', holderName: `Admin: ${remark}`, walletNumber: `${amount > 0 ? '+' : ''}${amount.toFixed(4)} coins`, amount: Math.abs(amount), status: 'Completed' });
                     }
                     return userData;
                 }, (error, committed) => {
-                    if (error) { alert('Transaction failed: ' + error); } 
-                    else if (!committed) { alert('Transaction aborted.'); } 
-                    else { alert(`Successfully sent ${amount} coins.`); renderAdminUsersAndWithdrawals(); }
+                    if (error) alert('Transaction failed: ' + error);
+                    else if (!committed) alert('Transaction aborted. User may not have enough coins to deduct.');
+                    else { alert(`Successfully adjusted balance by ${amount} coins.`); renderAdminUsersAndWithdrawals(); }
                 });
+            }
+
+            async function approveTransaction(userUid, txId) {
+                const snapshot = await db.ref(`userState/${userUid}/transactionHistory`).once('value');
+                const history = snapshot.val();
+                if (history) {
+                    const txIndex = history.findIndex(tx => tx && tx.id.toString() === txId.toString());
+                    if (txIndex > -1) {
+                        db.ref(`userState/${userUid}/transactionHistory/${txIndex}/status`).set('Approved').then(() => {
+                            alert(`Transaction approved.`); renderAdminUsersAndWithdrawals();
+                        });
+                    }
+                }
             }
 
             function toggleBanStatus(userUid) {
@@ -873,92 +1023,129 @@
                 });
             }
 
-            // MODIFICATION START: Replaced the entire handleCreatePost function
             async function handleCreatePost() {
                 const title = dom.adminPostTitle.value.trim();
                 const caption = dom.adminPostCaption.value.trim();
-                const mediaUrl = dom.adminPostImageUrl.value.trim(); // Get link from URL input
-                
-                if (!title || !caption || !mediaUrl) {
-                    return alert("Title, Caption, and Image URL are required.");
-                }
-
-                dom.adminCreatePostBtn.disabled = true;
-                dom.adminCreatePostBtn.textContent = 'Creating...';
-                
+                const mediaUrl = dom.adminPostImageUrl.value.trim();
+                if (!title || !caption || !mediaUrl) return alert("Title, Caption, and Image URL are required.");
+                dom.adminCreatePostBtn.disabled = true; dom.adminCreatePostBtn.textContent = 'Creating...';
                 try {
                     const newPostRef = db.ref('news').push();
-                    await newPostRef.set({
-                        id: newPostRef.key,
-                        title: title,
-                        caption: caption,
-                        mediaUrl: mediaUrl, // Save the URL directly
-                        mediaType: 'image', // Assume it's an image
-                        timestamp: firebase.database.ServerValue.TIMESTAMP,
-                        postedBy: 'Admin'
-                    });
-
+                    await newPostRef.set({ id: newPostRef.key, title, caption, mediaUrl, mediaType: 'image', timestamp: firebase.database.ServerValue.TIMESTAMP, postedBy: 'Admin' });
                     alert("Post created successfully!");
-                    dom.adminPostTitle.value = '';
-                    dom.adminPostCaption.value = '';
-                    dom.adminPostImageUrl.value = ''; // Clear the URL field
+                    dom.adminPostTitle.value = ''; dom.adminPostCaption.value = ''; dom.adminPostImageUrl.value = '';
                     renderAdminContentLists();
-                } catch (error) { 
-                    alert("Error creating post: " + error.message);
-                    console.error(error); 
-                } finally { 
-                    dom.adminCreatePostBtn.disabled = false; 
-                    dom.adminCreatePostBtn.textContent = 'Create Post';
-                }
+                } catch (error) { alert("Error creating post: " + error.message); } 
+                finally { dom.adminCreatePostBtn.disabled = false; dom.adminCreatePostBtn.textContent = 'Create Post'; }
             }
-            // MODIFICATION END
 
             function renderAdminContentLists() {
                 dom.adminPostsList.innerHTML = `<p>Loading posts...</p>`;
                 db.ref('news').once('value', snapshot => {
                     dom.adminPostsList.innerHTML = '';
-                    if (!snapshot.exists()) {
-                        dom.adminPostsList.innerHTML = `<p>No posts found.</p>`;
-                        return;
-                    }
+                    if (!snapshot.exists()) { dom.adminPostsList.innerHTML = `<p>No posts found.</p>`; return; }
                     snapshot.forEach(child => {
-                        const data = child.val();
-                        if (!data.id) return; 
-                        const item = document.createElement('div');
-                        item.className = 'admin-content-item';
-                        item.innerHTML = `
-                            <p>${data.title}</p>
-                            <div class="admin-content-actions">
-                                <button class="delete-post-btn" data-key="${data.id}">Delete</button>
-                            </div>`;
+                        const data = child.val(); if (!data.id) return;
+                        const item = document.createElement('div'); item.className = 'admin-content-item';
+                        item.innerHTML = `<p>${data.title}</p><div class="admin-content-actions"><button class="delete-post-btn" data-key="${data.id}">Delete</button></div>`;
                         dom.adminPostsList.appendChild(item);
                     });
-                    document.querySelectorAll('.delete-post-btn').forEach(btn => {
-                        btn.addEventListener('click', e => handleDeleteContent(e.target.dataset.key));
+                    document.querySelectorAll('.delete-post-btn').forEach(btn => btn.addEventListener('click', e => handleDeleteContent('news', e.target.dataset.key)));
+                });
+            }
+            
+            async function handleDeleteContent(type, key) {
+                if (!confirm(`Are you sure you want to delete this ${type === 'news' ? 'post' : 'task'}? This cannot be undone.`)) return;
+                try {
+                    await db.ref(`${type}/${key}`).remove();
+                    alert(`${type === 'news' ? 'Post' : 'Task'} deleted successfully.`);
+                    if (type === 'news') renderAdminContentLists(); else renderAdminTasks();
+                } catch (error) { alert(`Error deleting: ${error.message}`); }
+            }
+            
+            // --- ADMIN TASK MANAGEMENT ---
+            function handleCreateTask() {
+                const title = dom.adminTaskTitle.value.trim();
+                const description = dom.adminTaskDescription.value.trim();
+                const link = dom.adminTaskLink.value.trim();
+                const reward = parseInt(dom.adminTaskReward.value, 10);
+                const type = dom.adminTaskType.value;
+                if (!title || !description || !link || !reward) return alert("Please fill all task fields.");
+
+                const newTaskRef = db.ref('tasks').push();
+                newTaskRef.set({ id: newTaskRef.key, title, description, link, reward, type })
+                    .then(() => {
+                        alert("Task created successfully!");
+                        dom.adminTaskTitle.value = ''; dom.adminTaskDescription.value = ''; dom.adminTaskLink.value = ''; dom.adminTaskReward.value = '';
+                        renderAdminTasks();
+                    }).catch(error => alert("Error: " + error.message));
+            }
+
+            function renderAdminTasks() {
+                dom.adminTasksList.innerHTML = `<p>Loading tasks...</p>`;
+                db.ref('tasks').once('value', snapshot => {
+                    dom.adminTasksList.innerHTML = '';
+                    if (!snapshot.exists()) { dom.adminTasksList.innerHTML = `<p>No tasks found.</p>`; return; }
+                    snapshot.forEach(child => {
+                        const task = child.val();
+                        const item = document.createElement('div');
+                        item.className = 'admin-task-item';
+                        item.innerHTML = `
+                            <div class="admin-task-details">
+                                <p><strong>${task.title}</strong> (${task.reward} Coins)</p>
+                                <p style="font-size: 0.8em; color: var(--admin-light-text-color);">${task.description}</p>
+                            </div>
+                            <button class="delete-post-btn" data-key="${task.id}">Delete</button>`;
+                        dom.adminTasksList.appendChild(item);
+                    });
+                    dom.adminTasksList.querySelectorAll('.delete-post-btn').forEach(btn => {
+                        btn.addEventListener('click', e => handleDeleteContent('tasks', e.target.dataset.key));
                     });
                 });
             }
 
-            async function handleDeleteContent(key) {
-                if (!confirm(`Are you sure you want to delete this post? This cannot be undone.`)) return;
-                const dbRef = db.ref(`news/${key}`);
-                try {
-                    const snapshot = await dbRef.once('value');
-                    const data = snapshot.val();
-                    if (!data) throw new Error("Item not found in database.");
+            // --- USER TASK FUNCTIONS ---
+            function renderUserTasks() {
+                const tasksRef = db.ref('tasks');
+                const userCompletedTasksRef = db.ref(`userTasks/${state.user.uid}`);
+                dom.userTasksList.innerHTML = '';
 
-                    // No need to delete from storage as we are using URLs
-                    // if (data.mediaPath) {
-                    //     await storage.ref(data.mediaPath).delete().catch(err => console.warn("Storage file might not exist, continuing deletion:", err));
-                    // }
-
-                    await dbRef.remove();
-                    alert(`Post deleted successfully.`);
-                    renderAdminContentLists();
-                } catch (error) {
-                    alert(`Error deleting: ${error.message}`);
-                    console.error("Deletion error:", error);
+                tasksRef.once('value', taskSnapshot => {
+                    const allTasks = taskSnapshot.val();
+                    if (!allTasks) return;
+                    userCompletedTasksRef.once('value', completedSnapshot => {
+                        const completedTasks = completedSnapshot.val() || {};
+                        Object.values(allTasks).forEach(task => {
+                             if (!completedTasks[task.id]) {
+                                const taskCard = document.createElement('div');
+                                taskCard.className = 'card';
+                                taskCard.innerHTML = `
+                                    <h3>${task.title}</h3>
+                                    <p>${task.description}</p>
+                                    <p><strong>Reward: ${task.reward} Coins</strong></p>
+                                    <button class="button claim-task-btn" data-task-id="${task.id}" data-link="${task.link}" data-reward="${task.reward}">Complete Task</button>`;
+                                dom.userTasksList.prepend(taskCard);
+                             }
+                        });
+                    });
+                });
+            }
+            document.getElementById('user-tasks-list').addEventListener('click', function(e) {
+                if (e.target.classList.contains('claim-task-btn')) {
+                    const { taskId, link, reward } = e.target.dataset;
+                    window.open(link, '_blank');
+                    e.target.textContent = 'Claim Reward';
+                    e.target.classList.remove('claim-task-btn');
+                    e.target.onclick = () => claimTaskReward(taskId, parseInt(reward));
                 }
+            });
+            function claimTaskReward(taskId, reward) {
+                const userTaskRef = db.ref(`userTasks/${state.user.uid}/${taskId}`);
+                userTaskRef.set(true).then(() => {
+                    addCoins(reward);
+                    showModal('Reward Claimed!', `You received ${reward} coins.`);
+                    renderUserTasks();
+                });
             }
 
 
@@ -1334,60 +1521,41 @@
                 }
             }
 
-            // MODIFICATION START: Updated renderNewsFeed to make links clickable
             function renderNewsFeed() {
                 dom.newsFeedList.innerHTML = '<p style="text-align: center;">Loading news...</p>';
-
-                // Helper function to find URLs in text and convert them to clickable links
                 const linkify = (text) => {
                     const urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
-                    // Sanitize HTML to prevent XSS
                     const sanitizedText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
                     return sanitizedText.replace(urlRegex, url => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
                 };
 
                 db.ref('news').orderByChild('timestamp').once('value', snapshot => {
                     dom.newsFeedList.innerHTML = '';
-                    if (!snapshot.exists()) {
-                        dom.newsFeedList.innerHTML = '<p style="text-align: center;">No announcements yet.</p>';
-                        return;
-                    }
+                    if (!snapshot.exists()) { dom.newsFeedList.innerHTML = '<p style="text-align: center;">No announcements yet.</p>'; return; }
                     const newsFeed = [];
                     snapshot.forEach(child => { newsFeed.push(child.val()); });
                     newsFeed.reverse().forEach(post => {
                         const postEl = document.createElement('div'); postEl.className = 'news-post';
-                        let mediaHTML = '';
-                        // mediaType is now fixed to 'image' when using URL
-                        if (post.mediaType === 'image' && post.mediaUrl) {
-                            mediaHTML = `<img src="${post.mediaUrl}" alt="${post.title}" class="news-post-media">`;
-                        }
+                        let mediaHTML = post.mediaUrl ? `<img src="${post.mediaUrl}" alt="${post.title}" class="news-post-media">` : '';
                         const date = new Date(post.timestamp).toLocaleDateString();
-                        const processedCaption = linkify(post.caption); // Process caption for links
-
-                        postEl.innerHTML = `
-                            ${mediaHTML}
-                            <h3 class="news-post-title">${post.title}</h3>
-                            <p class="news-post-caption">${processedCaption}</p>
-                            <p class="news-post-meta">Posted by ${post.postedBy} on ${date}</p>`;
+                        const processedCaption = linkify(post.caption);
+                        postEl.innerHTML = `${mediaHTML}<h3 class="news-post-title">${post.title}</h3><p class="news-post-caption">${processedCaption}</p><p class="news-post-meta">Posted by ${post.postedBy} on ${date}</p>`;
                         dom.newsFeedList.appendChild(postEl);
                     });
                 });
             }
-            // MODIFICATION END
 
             function renderTransactionHistory() {
                 dom.transactionHistoryList.innerHTML = '';
                 const history = state.transactionHistory || [];
-                if (history.length === 0) {
-                    dom.transactionHistoryList.innerHTML = '<p style="text-align:center;">No transactions yet.</p>';
-                    return;
-                }
+                if (history.length === 0) { dom.transactionHistoryList.innerHTML = '<p style="text-align:center;">No transactions yet.</p>'; return; }
                 const historyArray = Array.isArray(history) ? history : Object.values(history);
                 historyArray.slice().reverse().forEach(tx => {
                     if (!tx) return;
                     const li = document.createElement('li'); li.className = 'transaction-item';
-                    const amountPrefix = (tx.type === 'admin_send' || tx.type === 'received') ? '+' : '-';
-                    li.innerHTML = `<div class="transaction-details"><span class="holder-name">${tx.holderName}</span><span>${tx.walletNumber || 'Coin Transfer'}</span><span><strong>${amountPrefix}${tx.amount.toFixed(4)} Coins</strong></span></div><span class="transaction-status ${tx.status.toLowerCase()}">${tx.status}</span>`;
+                    const isCredit = ['admin_send', 'received'].includes(tx.type);
+                    const amountPrefix = isCredit ? '+' : '-';
+                    li.innerHTML = `<div class="transaction-details"><span class="holder-name">${tx.holderName}</span><span>${tx.walletNumber || 'Coin Transfer'}</span><span><strong>${amountPrefix}${parseFloat(tx.amount).toFixed(4)} Coins</strong></span></div><span class="transaction-status ${tx.status.toLowerCase()}">${tx.status}</span>`;
                     dom.transactionHistoryList.appendChild(li);
                 });
             }
@@ -1415,17 +1583,16 @@
             dom.startTTTBtn.addEventListener('click', startTTTMatch);
             dom.mysteryBoxImg.addEventListener('click', claimMysteryBox);
             dom.logoutBtn.addEventListener('click', () => {
-                if (userStateListener && state.user?.uid) {
-                    db.ref('userState/' + state.user.uid).off('value', userStateListener);
-                }
+                if (userStateListener && state.user?.uid) db.ref('userState/' + state.user.uid).off('value', userStateListener);
                 auth.signOut();
             });
             dom.adminLogoutBtn.addEventListener('click', adminLogout);
             dom.adminCreatePostBtn.addEventListener('click', handleCreatePost);
+            dom.adminCreateTaskBtn.addEventListener('click', handleCreateTask);
             dom.tapCoin.addEventListener('click', handleMineTap);
             dom.tapCoin.addEventListener('touchstart', handleMineTap, {passive: true});
             dom.claimPassiveProfitBtn.addEventListener('click', claimPassiveProfit);
-        });
+        }
     </script>
 </body>
 </html>
